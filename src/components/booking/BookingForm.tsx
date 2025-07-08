@@ -45,14 +45,18 @@ export default function BookingForm({ venue, slot, onSuccess }: BookingFormProps
       })
 
       // Initier le paiement Wave CI
-      await initiatePayment({
+      const paymentResponse = await initiatePayment({
         booking_id: booking.id,
         provider: 'wave',
         amount: booking.total_amount,
         phone_number: phone,
       })
 
-      onSuccess?.(booking.id)
+      if (paymentResponse?.payment_url) {
+        window.location.href = paymentResponse.payment_url
+      } else {
+        onSuccess?.(booking.id)
+      }
     } catch (err) {
       setError((err as Error).message)
     }
