@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     const { error: updateError } = await supabase
       .from('payments')
       .update({
-        status: paymentStatus,
+        status: paymentStatus as any,
         transaction_id: transaction_id,
         updated_at: new Date().toISOString()
       })

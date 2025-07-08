@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
       query = query.eq('user_id', userId)
     }
     if (status) {
-      query = query.eq('status', status)
+      query = query.eq('status', status as any)
     }
     if (venueId) {
       query = query.eq('venue_id', venueId)

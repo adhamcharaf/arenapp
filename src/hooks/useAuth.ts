@@ -24,7 +24,8 @@ export function useAuth() {
       
       if (session) {
         setState({
-          user: session.user as User,
+          // Cast via unknown to bypass structural mismatch with Supabase user
+          user: session.user as unknown as User,
           session,
           loading: false,
           authType: 'account'
@@ -46,7 +47,7 @@ export function useAuth() {
       async (event, session) => {
         if (session) {
           setState({
-            user: session.user as User,
+            user: session.user as unknown as User,
             session,
             loading: false,
             authType: 'account'
