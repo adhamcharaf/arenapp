@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
 }
 
 // GET /api/auth/dual - Vérifier le statut d'authentification
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const { data: { session } } = await supabase.auth.getSession()
     

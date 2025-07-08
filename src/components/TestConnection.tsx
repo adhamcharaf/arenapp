@@ -16,7 +16,7 @@ export default function TestConnection() {
       setStatus('loading')
       
       // Test de connexion Supabase
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('venues')
         .select('count')
         .limit(1)
@@ -67,9 +67,9 @@ export default function TestConnection() {
 
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-lg">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-        🏟️ ARENAPP - Test de Connexion
-      </h2>
+      <p className="text-2xl font-bold text-gray-900 mb-6 text-center">
+        🏟️ ARENAPP – Test de Connexion
+      </p>
       
       <div className="space-y-4">
         {/* Status de connexion */}

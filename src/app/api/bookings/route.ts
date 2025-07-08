@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
       query = query.eq('user_id', userId)
     }
     if (status) {
-      query = query.eq('status', status as any)
+      query = query.eq('status', status as import('@/types/database').BookingStatus)
     }
     if (venueId) {
       query = query.eq('venue_id', venueId)
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Vérifier qu'il n'y a pas déjà une réservation pour ce créneau
-    const { data: existingBooking, error: existingError } = await supabase
+    const { data: existingBooking } = await supabase
       .from('bookings')
       .select('id')
       .eq('time_slot_id', validatedData.time_slot_id)

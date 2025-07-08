@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+import { useState, useEffect, useCallback } from 'react'
 import { Booking } from '@/types/database'
 
 export function useBookings(userId?: string) {
@@ -7,11 +6,7 @@ export function useBookings(userId?: string) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchBookings()
-  }, [userId])
-
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -32,7 +27,11 @@ export function useBookings(userId?: string) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [userId])
+
+  useEffect(() => {
+    fetchBookings()
+  }, [fetchBookings])
 
   const createBooking = async (bookingData: {
     venue_id: string

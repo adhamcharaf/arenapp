@@ -17,7 +17,7 @@ interface BookingFormProps {
 }
 
 export default function BookingForm({ venue, slot, onSuccess }: BookingFormProps) {
-  const { user, authType } = useAuth()
+  const { user } = useAuth()
   const { createBooking } = useBookings()
   const { initiatePayment, loading: paymentLoading } = usePayments()
 

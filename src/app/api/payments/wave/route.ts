@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Vérifier qu'il n'y a pas déjà un paiement en cours
-    const { data: existingPayment, error: paymentError } = await supabase
+    const { data: existingPayment } = await supabase
       .from('payments')
       .select('id')
       .eq('booking_id', validatedData.booking_id)

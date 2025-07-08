@@ -80,6 +80,6 @@ export interface AuditLog {
   table_name: string
   action: string
   user_id?: string
-  changes: Record<string, any>
+  changes: Record<string, unknown>
   created_at: string
 }

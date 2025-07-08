@@ -10,7 +10,7 @@ export function usePaymentStatus(bookingId?: string, intervalMs = 5000) {
   useEffect(() => {
     if (!bookingId) return
 
-    let timer: NodeJS.Timeout
+    let intervalId: NodeJS.Timeout
 
     const fetchStatus = async () => {
       try {
@@ -33,9 +33,9 @@ export function usePaymentStatus(bookingId?: string, intervalMs = 5000) {
     }
 
     fetchStatus()
-    timer = setInterval(fetchStatus, intervalMs)
+    intervalId = setInterval(fetchStatus, intervalMs)
 
-    return () => clearInterval(timer)
+    return () => clearInterval(intervalId)
   }, [bookingId, intervalMs])
 
   return { payment, loading, error }

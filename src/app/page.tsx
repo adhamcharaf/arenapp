@@ -1,4 +1,3 @@
-import TestConnection from '@/components/TestConnection'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 
@@ -8,7 +7,7 @@ export default function Home() {
       <section className="relative overflow-hidden">
         <div className="container mx-auto px-4 py-16 text-center">
           <h1 className="text-5xl font-extrabold text-ci-green mb-4">Réservez votre terrain en quelques clics</h1>
-          <p className="text-xl text-gray-700 mb-8">Padel ou football · Paiement mobile money Wave CI · 100% Côte d'Ivoire</p>
+          <p className="text-xl text-gray-700 mb-8">Padel ou football · Paiement mobile money Wave CI · 100% Côte d&apos;Ivoire</p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link href="/booking?sport=padel">
               <Button size="lg" variant="green" className="w-48">Padel</Button>

@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     console.log('Wave CI callback received:', body)
     
-    const { session_id, status, transaction_id, reference } = body
+    const { session_id, status, transaction_id } = body
     
     if (!session_id || !status) {
       return NextResponse.json(
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Mettre à jour le statut du paiement
-    let paymentStatus = 'pending'
+    let paymentStatus: import('@/types/database').PaymentStatus = 'pending'
     
     switch (status) {
       case 'completed':
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     const { error: updateError } = await supabase
       .from('payments')
       .update({
-        status: paymentStatus as any,
+        status: paymentStatus,
         transaction_id: transaction_id,
         updated_at: new Date().toISOString()
       })
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
 }
 
 // GET /api/payments/wave/callback - Pour tester le callback
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   return NextResponse.json({
     message: 'Wave CI callback endpoint',
     status: 'active'
