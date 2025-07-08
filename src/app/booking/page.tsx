@@ -9,6 +9,7 @@ import BookingForm from '@/components/booking/BookingForm'
 import { SportType, Venue, TimeSlot } from '@/types/database'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { LoadingSpinner } from '@/components/common/LoadingStates'
 
 export default function BookingPage() {
   const searchParams = useSearchParams()
@@ -36,7 +37,7 @@ export default function BookingPage() {
       {/* Step 1: Sélection terrain */}
       {!selectedVenue && (
         <>
-          {loading && <p className="text-center">Chargement des terrains…</p>}
+          {loading && <div className="flex justify-center"><LoadingSpinner /></div>}
           {error && <p className="text-center text-red-600">Erreur: {error}</p>}
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {venues.map((venue: Venue) => (

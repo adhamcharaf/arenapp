@@ -8,6 +8,7 @@ import { usePayments } from '@/hooks/usePayments'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PHONE_REGEX } from '@/utils/constants'
+import { LoadingSpinner } from '@/components/common/LoadingStates'
 
 interface BookingFormProps {
   venue: Venue
@@ -85,7 +86,8 @@ export default function BookingForm({ venue, slot, onSuccess }: BookingFormProps
 
       {error && <p className="text-red-600 text-sm">{error}</p>}
 
-      <Button type="submit" disabled={submitting || paymentLoading} className="w-full">
+      <Button type="submit" disabled={submitting || paymentLoading} className="w-full flex items-center justify-center gap-2">
+        {submitting || paymentLoading && <LoadingSpinner />}
         {submitting || paymentLoading ? 'Réservation…' : 'Réserver et payer avec Wave'}
       </Button>
     </form>

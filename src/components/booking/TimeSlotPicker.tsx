@@ -5,6 +5,7 @@ import { useTimeSlots } from '@/hooks/useTimeSlots'
 import { TimeSlot } from '@/types/database'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { LoadingSpinner } from '@/components/common/LoadingStates'
 
 interface TimeSlotPickerProps {
   venueId: string
@@ -32,7 +33,7 @@ export default function TimeSlotPicker({ venueId, onSelect }: TimeSlotPickerProp
         />
       </div>
 
-      {loading && <p>Chargement des créneaux...</p>}
+      {loading && <div className="flex justify-center"><LoadingSpinner /></div>}
       {error && <p className="text-red-600">Erreur: {error}</p>}
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
