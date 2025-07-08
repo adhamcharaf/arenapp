@@ -1,0 +1,54 @@
+{
+  "name": "arenapp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Système de réservation sportive pour la Côte d'Ivoire avec paiement mobile money",
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "db:migrate": "supabase db push",
+    "db:seed": "supabase db reset --with-seed",
+    "db:types": "supabase gen types typescript --local > src/types/supabase.ts"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "next": "15.3.5",
+    "@supabase/supabase-js": "^2.45.0",
+    "@supabase/ssr": "^0.5.0",
+    "zod": "^3.23.8",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^2.4.0"
+  },
+  "devDependencies": {
+    "typescript": "^5",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@tailwindcss/postcss": "^4",
+    "tailwindcss": "^4",
+    "eslint": "^9",
+    "eslint-config-next": "15.3.5",
+    "@eslint/eslintrc": "^3",
+    "prettier": "^3.3.0",
+    "prettier-plugin-tailwindcss": "^0.6.0",
+    "supabase": "^1.188.0"
+  },
+  "keywords": [
+    "nextjs",
+    "supabase",
+    "typescript",
+    "tailwindcss",
+    "booking-system",
+    "mobile-money",
+    "ivory-coast",
+    "sports-reservation"
+  ],
+  "author": "ARENAPP Team",
+  "license": "MIT"
+}
