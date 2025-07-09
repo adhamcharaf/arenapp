@@ -24,8 +24,8 @@ function PaymentStatusClient() {
   }, [payment, router])
 
   return (
-    <div className="container mx-auto px-4 py-16 text-center space-y-6">
-      <h1 className="text-3xl font-bold">Paiement Wave CI</h1>
+    <div className="container mx-auto px-4 py-16 text-center space-y-6 bg-white">
+      <h1 className="text-3xl font-bold text-ci-green">Paiement Wave CI</h1>
 
       {loading && (
         <div className="flex justify-center"><LoadingSpinner /></div>
@@ -35,10 +35,10 @@ function PaymentStatusClient() {
 
       {payment && (
         <div>
-          <p className="text-lg">Statut: <strong>{payment.status}</strong></p>
+          <p className="text-lg">Statut: <strong className="text-ci-orange">{payment.status}</strong></p>
           {payment.status === 'pending' && <p className="text-gray-600">En attente de confirmation du paiement mobile…</p>}
           {payment.status === 'failed' && <p className="text-red-600">Votre paiement a échoué, veuillez réessayer.</p>}
-          {payment.status === 'completed' && <p className="text-green-600">Paiement réussi !</p>}
+          {payment.status === 'completed' && <p className="text-ci-green">Paiement réussi !</p>}
         </div>
       )}
 

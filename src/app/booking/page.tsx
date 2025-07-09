@@ -11,6 +11,7 @@ import BookingForm from '@/components/booking/BookingForm'
 import { SportType, Venue, TimeSlot } from '@/types/database'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import Image from 'next/image'
 import { LoadingSpinner } from '@/components/common/LoadingStates'
 
 function BookingClient() {
@@ -27,14 +28,42 @@ function BookingClient() {
     router.push(`/payment?booking=${bookingId}`)
   }
 
+  const getBackgroundImage = () => {
+    if (sportParam === 'football') return '/football2.jpeg'
+    if (sportParam === 'padel') return '/padel-banner.webp'
+    return '/padel-banner.webp'
+  }
+
+  const getSportTitle = () => {
+    if (sportParam === 'football') return 'Football'
+    if (sportParam === 'padel') return 'Padel'
+    return 'Réservation'
+  }
+
   return (
-    <div className="container mx-auto px-4 py-8 space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Réservation</h1>
-        <Link href="/">
-          <Button variant="outline" size="sm">← Retour</Button>
-        </Link>
+    <div className="bg-white">
+      <div className="relative h-64 flex items-center justify-center">
+        <div className="absolute inset-0">
+          <Image
+            src={getBackgroundImage()}
+            alt={`Terrain de ${getSportTitle()}`}
+            fill
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-black/60"></div>
+        </div>
+        <div className="relative z-10 text-center text-white">
+          <h1 className="text-4xl font-bold mb-2">Réservation {getSportTitle()}</h1>
+          <p className="text-white/90">Choisissez votre terrain et créneau</p>
+        </div>
       </div>
+      
+      <div className="container mx-auto px-4 py-8 space-y-8">
+        <div className="flex items-center justify-between">
+          <Link href="/">
+            <Button variant="outline" size="sm">← Retour à l'accueil</Button>
+          </Link>
+        </div>
 
       {/* Step 1: Sélection terrain */}
       {!selectedVenue && (
@@ -57,7 +86,7 @@ function BookingClient() {
         <div className="space-y-6">
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={() => setSelectedVenue(null)}>← Changer de terrain</Button>
-            <h2 className="text-2xl font-semibold">Choisissez un créneau pour {selectedVenue.name}</h2>
+            <h2 className="text-2xl font-semibold text-ci-orange">Choisissez un créneau pour {selectedVenue.name}</h2>
           </div>
           <TimeSlotPicker venueId={selectedVenue.id} onSelect={setSelectedSlot} />
         </div>
@@ -70,6 +99,7 @@ function BookingClient() {
           <BookingForm venue={selectedVenue} slot={selectedSlot} onSuccess={handleBookingSuccess} />
         </div>
       )}
+      </div>
     </div>
   )
 }

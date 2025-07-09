@@ -1,13 +1,24 @@
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-white">
-      <section className="relative overflow-hidden">
-        <div className="container mx-auto px-4 py-16 text-center">
-          <h1 className="text-5xl font-extrabold text-ci-green mb-4">Réservez votre terrain en quelques clics</h1>
-          <p className="text-xl text-gray-700 mb-8">Padel ou football · Paiement mobile money Wave CI · 100% Côte d&apos;Ivoire</p>
+      <section className="relative overflow-hidden min-h-[600px] flex items-center">
+        <div className="absolute inset-0">
+          <Image
+            src="/padel-banner.webp"
+            alt="Terrain de padel"
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-black/50"></div>
+        </div>
+        <div className="container mx-auto px-4 py-16 text-center relative z-10">
+          <h1 className="text-5xl font-extrabold text-white mb-4">Réservez votre terrain en quelques clics</h1>
+          <p className="text-xl text-white/90 mb-8">Padel ou football · Paiement mobile money Wave CI · 100% Côte d&apos;Ivoire</p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link href="/booking?sport=padel">
               <Button size="lg" variant="green" className="w-48">Padel</Button>
@@ -17,7 +28,48 @@ export default function Home() {
             </Link>
           </div>
         </div>
-        <div className="absolute inset-0 pointer-events-none select-none opacity-5 bg-[url('/ci-flag.svg')] bg-cover" />
+      </section>
+
+      <section className="container mx-auto px-4 py-16">
+        <h2 className="text-3xl font-bold text-gray-900 mb-12 text-center">Choisissez votre sport</h2>
+        <div className="grid md:grid-cols-2 gap-8 mb-16">
+          <div className="relative overflow-hidden rounded-lg group cursor-pointer">
+            <div className="aspect-video relative">
+              <Image
+                src="/football1.jpg"
+                alt="Terrain de football"
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors duration-300"></div>
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
+                <h3 className="text-3xl font-bold text-white mb-4">Football</h3>
+                <p className="text-white/90 mb-6">Terrains de football en herbe synthétique</p>
+                <Link href="/booking?sport=football">
+                  <Button size="lg" variant="default" className="w-40">Réserver</Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+          <div className="relative overflow-hidden rounded-lg group cursor-pointer">
+            <div className="aspect-video relative">
+              <Image
+                src="/padel-banner.webp"
+                alt="Terrain de padel"
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors duration-300"></div>
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
+                <h3 className="text-3xl font-bold text-white mb-4">Padel</h3>
+                <p className="text-white/90 mb-6">Terrains de padel couverts et éclairés</p>
+                <Link href="/booking?sport=padel">
+                  <Button size="lg" variant="green" className="w-40">Réserver</Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section className="container mx-auto px-4 py-16">

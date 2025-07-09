@@ -66,12 +66,12 @@ export default function BookingForm({ venue, slot, onSuccess }: BookingFormProps
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="border p-4 rounded-md bg-gray-50">
-        <h3 className="font-semibold text-gray-900 mb-2">Récapitulatif</h3>
+      <div className="border p-4 rounded-md bg-gray-50 border-l-4 border-ci-green">
+        <h3 className="font-semibold text-ci-green mb-2">Récapitulatif</h3>
         <p><strong>Terrain :</strong> {venue.name}</p>
         <p><strong>Date :</strong> {new Date(slot.start_time).toLocaleDateString('fr-FR')}</p>
         <p><strong>Heure :</strong> {new Date(slot.start_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} - {new Date(slot.end_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
-        <p><strong>Montant :</strong> {Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(venue.price_per_hour)}</p>
+        <p><strong>Montant :</strong> <span className="text-ci-orange font-semibold">{Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(venue.price_per_hour)}</span></p>
       </div>
 
       <div>
@@ -86,7 +86,7 @@ export default function BookingForm({ venue, slot, onSuccess }: BookingFormProps
 
       {error && <p className="text-red-600 text-sm">{error}</p>}
 
-      <Button type="submit" disabled={submitting || paymentLoading} className="w-full flex items-center justify-center gap-2">
+      <Button type="submit" disabled={submitting || paymentLoading} variant="green" className="w-full flex items-center justify-center gap-2">
         {submitting || paymentLoading && <LoadingSpinner />}
         {submitting || paymentLoading ? 'Réservation…' : 'Réserver et payer avec Wave'}
       </Button>
