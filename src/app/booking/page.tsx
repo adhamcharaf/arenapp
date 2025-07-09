@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic'
 
 import { useSearchParams, useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { useVenues } from '@/hooks/useVenues'
 import VenueCard from '@/components/booking/VenueCard'
 import TimeSlotPicker from '@/components/booking/TimeSlotPicker'
@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { LoadingSpinner } from '@/components/common/LoadingStates'
 
-export default function BookingPage() {
+function BookingClient() {
   const searchParams = useSearchParams()
   const sportParam = searchParams.get('sport') as SportType | null
   const router = useRouter()
@@ -71,5 +71,13 @@ export default function BookingPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function BookingPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><LoadingSpinner /></div>}>
+      <BookingClient />
+    </Suspense>
   )
 }

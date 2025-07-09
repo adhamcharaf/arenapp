@@ -3,13 +3,13 @@
 export const dynamic = 'force-dynamic'
 
 import { useSearchParams, useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, Suspense } from 'react'
 import { usePaymentStatus } from '@/hooks/usePaymentStatus'
 import { LoadingSpinner } from '@/components/common/LoadingStates'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 
-export default function PaymentStatusPage() {
+function PaymentStatusClient() {
   const searchParams = useSearchParams()
   const bookingId = searchParams.get('booking') || undefined
   const router = useRouter()
@@ -47,5 +47,13 @@ export default function PaymentStatusPage() {
         <Link href="/"><Button variant="outline">Retour à l'accueil</Button></Link>
       </div>
     </div>
+  )
+}
+
+export default function PaymentStatusPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><LoadingSpinner /></div>}>
+      <PaymentStatusClient />
+    </Suspense>
   )
 }

@@ -24,15 +24,15 @@ export default function Home() {
         <h2 className="text-3xl font-bold text-gray-900 mb-6">Pourquoi ARENAPP ?</h2>
         <div className="grid md:grid-cols-3 gap-6 text-center">
           <div>
-            <h3 className="text-xl font-semibold mb-2">Réservation instantanée</h3>
-            <p className="text-gray-600">Disponibilité en temps réel des terrains populaires d'Abidjan.</p>
+            <h3 className="text-xl text-ci-orange font-semibold mb-2">Réservation instantanée</h3>
+            <p className="text-gray-600">Disponibilité en temps réel des terrains d'ARENA.</p>
           </div>
           <div>
-            <h3 className="text-xl font-semibold mb-2">Paiement sécurisé</h3>
-            <p className="text-gray-600">Wave CI prioritaire, Orange et MTN à venir.</p>
+            <h3 className="text-xl text-ci-green font-semibold mb-2">Paiement sécurisé</h3>
+            <p className="text-gray-600">Wave, Orange money et MTN money.</p>
           </div>
           <div>
-            <h3 className="text-xl font-semibold mb-2">100% Ivoirien</h3>
+            <h3 className="text-xl text-ci-orange font-semibold mb-2">100% Ivoirien</h3>
             <p className="text-gray-600">Conçu et hébergé en Côte d'Ivoire pour un service local optimal.</p>
           </div>
         </div>

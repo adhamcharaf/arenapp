@@ -1,20 +1,16 @@
 @import "tailwindcss";
 
+@theme {
+  --color-ci-green: #00B04F;
+  --color-ci-orange: #FF8500;
+  --color-wave-blue: #1E40AF;
+  --color-sport-padel: #10B981;
+  --color-sport-football: #F59E0B;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --ci-green: #00B04F;
-  --ci-orange: #FF8500;
-  --wave-blue: #1E40AF;
-  --padel-green: #10B981;
-  --football-orange: #F59E0B;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
