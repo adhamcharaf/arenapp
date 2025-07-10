@@ -36,14 +36,24 @@ export default function BookingForm({ venue, slot, onSuccess }: BookingFormProps
     }
 
     setSubmitting(true)
+    console.log('🚀 Début soumission formulaire réservation')
     try {
       // Créer la réservation
+      console.log('📝 Données à envoyer:', {
+        venue_id: venue.id,
+        time_slot_id: slot.id,
+        phone_number: phone,
+        notes: notes || undefined,
+      })
+      
       const booking = await createBooking({
         venue_id: venue.id,
         time_slot_id: slot.id,
         phone_number: phone,
         notes: notes || undefined,
       })
+      
+      console.log('✅ Réservation créée côté client:', booking)
 
       // Initier le paiement Wave CI
       const paymentResponse = await initiatePayment({
@@ -59,6 +69,7 @@ export default function BookingForm({ venue, slot, onSuccess }: BookingFormProps
         onSuccess?.(booking.id)
       }
     } catch (err) {
+      console.error('❌ Erreur lors de la réservation:', err)
       setError((err as Error).message)
     }
     setSubmitting(false)

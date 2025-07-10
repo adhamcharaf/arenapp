@@ -58,18 +58,27 @@ export async function GET(request: NextRequest) {
 // POST /api/bookings - Créer une réservation
 export async function POST(request: NextRequest) {
   try {
+    console.log('🔄 Début création réservation')
     const body = await request.json()
+    console.log('📝 Données reçues:', JSON.stringify(body, null, 2))
+    
     const validatedData = bookingSchema.parse(body)
+    console.log('✅ Validation réussie:', JSON.stringify(validatedData, null, 2))
     
     const normalizedPhone = validatePhone(validatedData.phone_number)
+    console.log('📞 Téléphone normalisé:', normalizedPhone)
     
     // Vérifier la disponibilité du créneau
+    console.log('🔍 Vérification disponibilité créneau:', validatedData.time_slot_id)
     const { data: timeSlot, error: slotError } = await supabase
       .from('time_slots')
       .select('*, venue:venues(*)')
       .eq('id', validatedData.time_slot_id)
       .eq('is_available', true)
       .single()
+    
+    console.log('📅 Créneau trouvé:', timeSlot ? 'OUI' : 'NON')
+    if (slotError) console.log('❌ Erreur créneau:', slotError)
     
     if (slotError || !timeSlot) {
       return NextResponse.json(
@@ -95,12 +104,20 @@ export async function POST(request: NextRequest) {
     
     // Déterminer l'utilisateur (compte ou invité)
     let userId = null
-    const { data: { session } } = await supabase.auth.getSession()
+    console.log('🔐 Vérification session utilisateur...')
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    
+    if (sessionError) {
+      console.log('❌ Erreur session:', sessionError)
+    }
+    console.log('👤 Session trouvée:', session ? 'OUI (Utilisateur connecté)' : 'NON (Mode invité)')
     
     if (session) {
       userId = session.user.id
+      console.log('✅ Utilisateur connecté ID:', userId)
     } else {
       // Utilisateur invité - créer ou récupérer
+      console.log('🔍 Recherche utilisateur invité avec téléphone:', normalizedPhone)
       const { data: guestUser, error: guestError } = await supabase
         .from('users')
         .select('id')
@@ -108,7 +125,11 @@ export async function POST(request: NextRequest) {
         .eq('auth_type', 'guest')
         .single()
       
+      console.log('👤 Utilisateur invité existant:', guestUser ? 'TROUVÉ' : 'NON TROUVÉ')
+      if (guestError) console.log('ℹ️ Erreur recherche invité:', guestError)
+      
       if (guestError && guestError.code !== 'PGRST116') {
+        console.log('❌ Erreur critique utilisateur invité:', guestError)
         return NextResponse.json(
           { error: 'Erreur utilisateur invité', details: guestError.message },
           { status: 500 }
@@ -116,6 +137,7 @@ export async function POST(request: NextRequest) {
       }
       
       if (!guestUser) {
+        console.log('👤 Création nouvel utilisateur invité...')
         const { data: newGuest, error: createError } = await supabase
           .from('users')
           .insert({
@@ -126,6 +148,7 @@ export async function POST(request: NextRequest) {
           .single()
         
         if (createError) {
+          console.log('❌ Erreur création utilisateur:', createError)
           return NextResponse.json(
             { error: 'Erreur création utilisateur', details: createError.message },
             { status: 500 }
@@ -133,23 +156,29 @@ export async function POST(request: NextRequest) {
         }
         
         userId = newGuest.id
+        console.log('✅ Nouvel utilisateur invité créé:', userId)
       } else {
         userId = guestUser.id
+        console.log('✅ Utilisation utilisateur invité existant:', userId)
       }
     }
     
     // Créer la réservation
+    console.log('📝 Création de la réservation...')
+    const bookingData = {
+      user_id: userId,
+      venue_id: validatedData.venue_id,
+      time_slot_id: validatedData.time_slot_id,
+      phone_number: normalizedPhone,
+      total_amount: timeSlot.venue.price_per_hour,
+      notes: validatedData.notes,
+      status: 'pending'
+    }
+    console.log('📋 Données réservation:', JSON.stringify(bookingData, null, 2))
+    
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
-      .insert({
-        user_id: userId,
-        venue_id: validatedData.venue_id,
-        time_slot_id: validatedData.time_slot_id,
-        phone_number: normalizedPhone,
-        total_amount: timeSlot.venue.price_per_hour,
-        notes: validatedData.notes,
-        status: 'pending'
-      })
+      .insert(bookingData)
       .select(`
         *,
         user:users(*),
@@ -159,11 +188,14 @@ export async function POST(request: NextRequest) {
       .single()
     
     if (bookingError) {
+      console.log('❌ Erreur création réservation:', bookingError)
       return NextResponse.json(
         { error: 'Erreur création réservation', details: bookingError.message },
         { status: 500 }
       )
     }
+    
+    console.log('✅ Réservation créée avec succès:', booking.id)
     
     // Marquer le créneau comme non disponible
     await supabase
@@ -180,6 +212,7 @@ export async function POST(request: NextRequest) {
         notes: 'Réservation créée'
       })
     
+    console.log('🎉 Processus de réservation terminé avec succès')
     return NextResponse.json({
       success: true,
       booking,
@@ -187,7 +220,16 @@ export async function POST(request: NextRequest) {
     })
     
   } catch (error) {
-    console.error('Create booking error:', error)
+    console.error('❌ ERREUR GLOBALE Create booking:', error)
+    console.error('📍 Stack trace:', error instanceof Error ? error.stack : 'Pas de stack trace')
+    
+    if (error instanceof Error && error.message.includes('Variables d\'environnement Supabase')) {
+      return NextResponse.json(
+        { error: 'Configuration Supabase manquante' },
+        { status: 500 }
+      )
+    }
+    
     return NextResponse.json(
       { error: 'Erreur serveur', details: error instanceof Error ? error.message : 'Erreur inconnue' },
       { status: 500 }
