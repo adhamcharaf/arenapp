@@ -71,23 +71,56 @@ export function useAuth() {
 
   // Connexion avec email/password
   const signInWithEmail = async (email: string, password: string) => {
+    console.log('🔐 Début connexion avec email:', email)
+    
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
     })
 
-    if (error) throw error
+    console.log('📧 Réponse Supabase Auth signIn:', {
+      data: data ? {
+        user: data.user ? 'Utilisateur connecté' : 'Pas d\'utilisateur',
+        session: data.session ? 'Session créée' : 'Pas de session'
+      } : 'Pas de data',
+      error: error ? error.message : 'Pas d\'erreur'
+    })
+
+    if (error) {
+      console.error('❌ Erreur connexion Supabase Auth:', error)
+      throw error
+    }
+    
     return data
   }
 
   // Inscription avec email/password
   const signUpWithEmail = async (email: string, password: string) => {
+    console.log('🔐 Début inscription avec email:', email)
+    
     const { data, error } = await supabase.auth.signUp({
       email,
       password
     })
 
-    if (error) throw error
+    console.log('📧 Réponse Supabase Auth signUp:', {
+      data: data ? {
+        user: data.user ? 'Utilisateur créé' : 'Pas d\'utilisateur',
+        session: data.session ? 'Session créée' : 'Pas de session'
+      } : 'Pas de data',
+      error: error ? error.message : 'Pas d\'erreur'
+    })
+
+    if (error) {
+      console.error('❌ Erreur inscription Supabase Auth:', error)
+      throw error
+    }
+
+    // Le profil utilisateur sera créé automatiquement par le trigger
+    if (data.user) {
+      console.log('👤 Utilisateur créé dans auth.users, le trigger va créer le profil automatiquement')
+    }
+
     return data
   }
 
@@ -132,11 +165,30 @@ export function useAuth() {
     })
   }
 
+  // Méthodes simplifiées pour compatibilité avec la page d'auth
+  const login = async (credentials: { email?: string; phone?: string; password: string }) => {
+    if (credentials.email) {
+      return signInWithEmail(credentials.email, credentials.password)
+    } else if (credentials.phone) {
+      return signInAsGuest(credentials.phone)
+    }
+    throw new Error('Email ou téléphone requis')
+  }
+
+  const register = async (credentials: { email?: string; phone?: string; password: string }) => {
+    if (credentials.email) {
+      return signUpWithEmail(credentials.email, credentials.password)
+    }
+    throw new Error('L\'inscription nécessite un email')
+  }
+
   return {
     ...state,
     signInWithEmail,
     signUpWithEmail,
     signInAsGuest,
-    signOut
+    signOut,
+    login,
+    register
   }
 }
