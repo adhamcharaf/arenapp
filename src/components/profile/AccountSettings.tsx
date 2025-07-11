@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { User } from '@/types/database'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -135,7 +135,7 @@ export default function AccountSettings({ user, onSignOut, onDeleteAccount }: Ac
                 <Input
                   type="password"
                   value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPassword(e.target.value)}
                   placeholder="Min. 6 caractères"
                 />
               </div>
@@ -147,7 +147,7 @@ export default function AccountSettings({ user, onSignOut, onDeleteAccount }: Ac
                 <Input
                   type="password"
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
                   placeholder="Confirmez le nouveau mot de passe"
                 />
               </div>
@@ -198,7 +198,7 @@ export default function AccountSettings({ user, onSignOut, onDeleteAccount }: Ac
                   <Input
                     type="email"
                     value={deleteConfirmEmail}
-                    onChange={(e) => setDeleteConfirmEmail(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDeleteConfirmEmail(e.target.value)}
                     placeholder={user.email}
                   />
                 </div>
