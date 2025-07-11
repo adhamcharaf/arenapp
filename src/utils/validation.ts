@@ -10,6 +10,24 @@ export const authSchema = z.object({
   message: 'Email ou téléphone requis',
 })
 
+// Validation pour l'inscription complète
+export const registerSchema = z.object({
+  email: z.string().email('Format email invalide'),
+  phone: z.string().regex(PHONE_REGEX, 'Numéro de téléphone invalide'),
+  password: z.string().min(8, 'Mot de passe minimum 8 caractères'),
+  first_name: z.string().min(1, 'Prénom requis').trim(),
+  last_name: z.string().min(1, 'Nom requis').trim(),
+})
+
+// Validation pour login dual étendu (email+password OU phone+password)
+export const loginDualSchema = z.object({
+  email: z.string().email().optional(),
+  phone: z.string().regex(PHONE_REGEX, 'Numéro de téléphone invalide').optional(),
+  password: z.string().min(8, 'Mot de passe requis'),
+}).refine((data) => data.email || data.phone, {
+  message: 'Email ou téléphone requis',
+})
+
 // Validation pour les réservations
 export const bookingSchema = z.object({
   venue_id: z.string().uuid(),
@@ -50,7 +68,7 @@ export const timeSlotSchema = z.object({
 
 // Utilitaires de validation
 export const validatePhone = (phone: string): string => {
-  // Normaliser le numéro de téléphone ivoirien
+  // Normaliser le numéro de téléphone ivoirien - doit être exactement 10 chiffres
   let normalized = phone.replace(/\s+/g, '')
   
   if (normalized.startsWith('+225')) {
@@ -61,7 +79,17 @@ export const validatePhone = (phone: string): string => {
     normalized = normalized.substring(1)
   }
   
+  // Vérifier que c'est exactement 10 chiffres
+  if (!/^[0-9]{10}$/.test(normalized)) {
+    throw new Error('Le numéro de téléphone doit contenir exactement 10 chiffres')
+  }
+  
   return `+225${normalized}`
+}
+
+export const validatePhone10Digits = (phone: string): boolean => {
+  const cleaned = phone.replace(/\s+/g, '')
+  return /^[0-9]{10}$/.test(cleaned)
 }
 
 export const validateEmail = (email: string): boolean => {

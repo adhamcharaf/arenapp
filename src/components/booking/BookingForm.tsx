@@ -7,7 +7,8 @@ import { useBookings } from '@/hooks/useBookings'
 import { usePayments } from '@/hooks/usePayments'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { PHONE_REGEX } from '@/utils/constants'
+import PhoneInput from '@/components/ui/PhoneInput'
+import { validatePhone10Digits } from '@/utils/validation'
 import { LoadingSpinner } from '@/components/common/LoadingStates'
 
 interface BookingFormProps {
@@ -37,8 +38,10 @@ export default function BookingForm({ venue, slot, onSuccess }: BookingFormProps
     e.preventDefault()
     setError(null)
 
-    if (!PHONE_REGEX.test(phone)) {
-      setError('Numéro de téléphone invalide')
+    // Validation du téléphone (10 chiffres exactement)
+    const phoneDigits = phone.replace('+225', '')
+    if (!validatePhone10Digits(phoneDigits)) {
+      setError('Le numéro de téléphone doit contenir exactement 10 chiffres')
       return
     }
 
@@ -93,15 +96,21 @@ export default function BookingForm({ venue, slot, onSuccess }: BookingFormProps
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Téléphone pour confirmation</label>
-        <Input
-          type="tel"
+        <label className="block text-sm font-medium mb-1">
+          Téléphone pour confirmation <span className="text-red-500">*</span>
+        </label>
+        <PhoneInput
           value={phone}
-          onChange={(e: ChangeEvent<HTMLInputElement>) => setPhone(e.target.value)}
-          placeholder="+225XXXXXXXX"
+          onChange={setPhone}
+          placeholder="XXXXXXXXXX"
           disabled={authType === 'account' && !!user?.phone}
           required
         />
+        {authType === 'account' && user?.phone && (
+          <p className="text-sm text-gray-500 mt-1">
+            Numéro pré-rempli depuis votre compte
+          </p>
+        )}
       </div>
 
       <div>

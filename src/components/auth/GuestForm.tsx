@@ -3,8 +3,9 @@
 import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { PHONE_REGEX } from '@/utils/constants'
+import PhoneInput from '@/components/ui/PhoneInput'
+import { LoadingSpinner } from '@/components/common/LoadingStates'
+import { validatePhone10Digits } from '@/utils/validation'
 
 export default function GuestForm() {
   const { signInAsGuest } = useAuth()
@@ -15,10 +16,14 @@ export default function GuestForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
-    if (!PHONE_REGEX.test(phone)) {
-      setError('Numéro de téléphone invalide')
+    
+    // Validation du téléphone (10 chiffres exactement)
+    const phoneDigits = phone.replace('+225', '')
+    if (!validatePhone10Digits(phoneDigits)) {
+      setError('Le numéro de téléphone doit contenir exactement 10 chiffres')
       return
     }
+    
     setLoading(true)
     try {
       await signInAsGuest(phone)
@@ -31,11 +36,26 @@ export default function GuestForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium mb-1">Téléphone (+225)</label>
-        <Input type="tel" value={phone} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhone(e.target.value)} placeholder="07XXXXXXXX" required />
+        <label className="block text-sm font-medium mb-1">
+          Téléphone <span className="text-red-500">*</span>
+        </label>
+        <PhoneInput
+          value={phone}
+          onChange={setPhone}
+          error={error || undefined}
+          placeholder="XXXXXXXXXX"
+          required
+        />
       </div>
-      {error && <p className="text-red-600 text-sm">{error}</p>}
-      <Button type="submit" disabled={loading} className="w-full">{loading ? 'Connexion…' : 'Continuer en invité'}</Button>
+      
+      <Button 
+        type="submit" 
+        disabled={loading || !validatePhone10Digits(phone.replace('+225', ''))} 
+        className="w-full flex items-center justify-center gap-2"
+      >
+        {loading && <LoadingSpinner />}
+        {loading ? 'Connexion…' : 'Continuer en invité'}
+      </Button>
     </form>
   )
 }
