@@ -1,11 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState, type ChangeEvent } from 'react'
 import { useTimeSlots } from '@/hooks/useTimeSlots'
 import { TimeSlot } from '@/types/database'
 import { LoadingSpinner } from '@/components/common/LoadingStates'
 import { Input } from '@/components/ui/input'
 import { isPastTimeSlot, formatSlotTime } from '@/utils/dateUtils'
+
+/// <reference types="react" />
 
 // Helper to get slot card classes based on availability / past
 const getSlotClasses = (slot: TimeSlot) => {
@@ -41,7 +43,7 @@ export default function TimeSlotPicker({ venueId, onSelect }: TimeSlotPickerProp
         <Input
           type="date"
           value={selectedDate}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSelectedDate(e.target.value)}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => setSelectedDate(e.target.value)}
         />
       </div>
 
