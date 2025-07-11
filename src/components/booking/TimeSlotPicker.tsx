@@ -7,8 +7,6 @@ import { LoadingSpinner } from '@/components/common/LoadingStates'
 import { Input } from '@/components/ui/input'
 import { isPastTimeSlot, formatSlotTime } from '@/utils/dateUtils'
 
-/// <reference types="react" />
-
 // Helper to get slot card classes based on availability / past
 const getSlotClasses = (slot: TimeSlot) => {
   const isPast = isPastTimeSlot(slot.start_time)

@@ -1,5 +1,3 @@
-/// <reference types="react" />
-
 'use client'
 
 import React, { useState, useEffect, type ChangeEvent, type FormEvent } from 'react'
