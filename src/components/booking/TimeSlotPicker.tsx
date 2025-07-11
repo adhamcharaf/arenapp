@@ -1,11 +1,23 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState, type ChangeEvent } from 'react'
 import { useTimeSlots } from '@/hooks/useTimeSlots'
 import { TimeSlot } from '@/types/database'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { LoadingSpinner } from '@/components/common/LoadingStates'
+import { Input } from '@/components/ui/input'
+import { isPastTimeSlot, formatSlotTime } from '@/utils/dateUtils'
+
+// Helper to get slot card classes based on availability / past
+const getSlotClasses = (slot: TimeSlot) => {
+  const isPast = isPastTimeSlot(slot.start_time)
+  const isUnavailable = !slot.is_available || isPast
+
+  if (isUnavailable) {
+    return 'bg-gray-200 text-gray-500 p-3 rounded-lg cursor-not-allowed border-2 border-gray-300 slot-disabled'
+  }
+
+  return 'bg-ci-green text-white p-3 rounded-lg cursor-pointer hover:bg-ci-green/90 border-2 border-transparent slot-available'
+}
 
 interface TimeSlotPickerProps {
   venueId: string
@@ -20,7 +32,7 @@ export default function TimeSlotPicker({ venueId, onSelect }: TimeSlotPickerProp
 
   const { slots, loading, error } = useTimeSlots(venueId, selectedDate)
 
-  const availableSlots = slots.filter((s) => s.is_available)
+  // On affiche tous les créneaux, le style sera déterminé par la fonction ci-dessus
 
   return (
     <div className="space-y-4">
@@ -29,31 +41,49 @@ export default function TimeSlotPicker({ venueId, onSelect }: TimeSlotPickerProp
         <Input
           type="date"
           value={selectedDate}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSelectedDate(e.target.value)}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => setSelectedDate(e.target.value)}
         />
       </div>
 
       {loading && <div className="flex justify-center"><LoadingSpinner /></div>}
       {error && <p className="text-red-600">Erreur: {error}</p>}
 
+      {/* Légende disponible / occupé */}
+      <div className="flex gap-4 mb-4 text-sm">
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 bg-ci-green rounded" />
+          <span>Disponible</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 bg-gray-200 rounded" />
+          <span>Occupé</span>
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-        {availableSlots.map((slot) => {
-          const start = new Date(slot.start_time).toLocaleTimeString('fr-FR', {
-            hour: '2-digit',
-            minute: '2-digit'
-          })
-          const end = new Date(slot.end_time).toLocaleTimeString('fr-FR', {
-            hour: '2-digit',
-            minute: '2-digit'
-          })
+        {slots.map((slot) => {
+          const start = formatSlotTime(slot.start_time)
+          const end = formatSlotTime(slot.end_time)
+
+          const isPast = isPastTimeSlot(slot.start_time)
+          const isUnavailable = !slot.is_available || isPast
+
           return (
-            <Button key={slot.id} variant="outline" size="sm" onClick={() => onSelect(slot)}>
-              {start} - {end}
-            </Button>
+            <div
+              key={slot.id}
+              className={getSlotClasses(slot)}
+              onClick={() => {
+                if (isUnavailable) return
+                onSelect(slot)
+              }}
+            >
+              <div className="font-medium">{start} - {end}</div>
+              <div className="text-sm opacity-90">{isUnavailable ? 'Occupé' : 'Libre'}</div>
+            </div>
           )
         })}
 
-        {!loading && availableSlots.length === 0 && (
+        {!loading && slots.length === 0 && (
           <p className="col-span-full text-gray-600 text-center">Aucun créneau disponible pour cette date.</p>
         )}
       </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState, useEffect, type ChangeEvent, type FormEvent } from 'react'
 import { Venue, TimeSlot } from '@/types/database'
 import { useAuth } from '@/hooks/useAuth'
 import { useBookings } from '@/hooks/useBookings'
@@ -17,16 +17,23 @@ interface BookingFormProps {
 }
 
 export default function BookingForm({ venue, slot, onSuccess }: BookingFormProps) {
-  const { user } = useAuth()
+  const { user, authType } = useAuth()
   const { createBooking } = useBookings()
   const { initiatePayment, loading: paymentLoading } = usePayments()
 
-  const [phone, setPhone] = useState(user?.phone || '')
+  const [phone, setPhone] = useState<string>('')
+
+  // Auto-fill phone when conditions are met
+  useEffect(() => {
+    if (authType === 'account' && user?.phone) {
+      setPhone(user.phone)
+    }
+  }, [authType, user])
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError(null)
 
@@ -87,12 +94,19 @@ export default function BookingForm({ venue, slot, onSuccess }: BookingFormProps
 
       <div>
         <label className="block text-sm font-medium mb-1">Téléphone pour confirmation</label>
-        <Input type="tel" value={phone} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhone(e.target.value)} required />
+        <Input
+          type="tel"
+          value={phone}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => setPhone(e.target.value)}
+          placeholder="+225XXXXXXXX"
+          disabled={authType === 'account' && !!user?.phone}
+          required
+        />
       </div>
 
       <div>
         <label className="block text-sm font-medium mb-1">Notes (optionnel)</label>
-        <Input value={notes} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNotes(e.target.value)} placeholder="Ex: Ramener des balles" />
+        <Input value={notes} onChange={(e: ChangeEvent<HTMLInputElement>) => setNotes(e.target.value)} placeholder="Ex: Ramener des balles" />
       </div>
 
       {error && <p className="text-red-600 text-sm">{error}</p>}
