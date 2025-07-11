@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
       phone_number: normalizedPhone,
       total_amount: timeSlot.venue.price_per_hour,
       notes: validatedData.notes,
-      status: 'pending'
+      status: 'pending' as import('@/types/database').BookingStatus
     }
     console.log('📋 Données réservation:', JSON.stringify(bookingData, null, 2))
     

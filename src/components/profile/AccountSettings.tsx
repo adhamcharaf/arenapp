@@ -218,7 +218,7 @@ export default function AccountSettings({ user, onSignOut, onDeleteAccount }: Ac
                 variant="default"
                 className="flex-1 bg-red-600 hover:bg-red-700"
                 onClick={handleDeleteAccount}
-                disabled={isLoading || (user.email && deleteConfirmEmail !== user.email)}
+                disabled={isLoading || (!!user.email && deleteConfirmEmail !== user.email)}
               >
                 {isLoading ? <LoadingSpinner /> : 'Supprimer définitivement'}
               </Button>
