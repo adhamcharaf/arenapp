@@ -1,3 +1,8 @@
+// @ts-nocheck
+// PAYMENT_DISABLED: Paiements Wave CI désactivés temporairement
+import { NextResponse } from 'next/server'
+
+/* PAYMENT_DISABLED_START
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { paymentSchema, validatePhone } from '@/utils/validation'
@@ -11,7 +16,8 @@ if (!WAVE_CI_API_KEY) {
 }
 
 // POST /api/payments/wave - Initier paiement Wave CI
-export async function POST(request: NextRequest) {
+// PAYMENT_DISABLED
+async function POST_WAVE_DISABLED(request: NextRequest) {
   try {
     const body = await request.json()
     const validatedData = paymentSchema.parse(body)
@@ -145,7 +151,8 @@ export async function POST(request: NextRequest) {
 }
 
 // GET /api/payments/wave - Vérifier statut paiement Wave
-export async function GET(request: NextRequest) {
+// PAYMENT_DISABLED
+async function GET_WAVE_DISABLED(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const sessionId = searchParams.get('session_id')
@@ -232,3 +239,14 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+PAYMENT_DISABLED_END */
+
+export async function POST() {
+  return NextResponse.json({ error: 'Paiements désactivés (mode test)' }, { status: 503 })
+}
+
+export async function GET() {
+  return NextResponse.json({ error: 'Paiements désactivés (mode test)' }, { status: 503 })
+}
+
+// Duplicate stubs supprimés (PAYMENT_DISABLED)

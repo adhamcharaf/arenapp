@@ -14,6 +14,9 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { LoadingSpinner } from '@/components/common/LoadingStates'
 
+// @ts-ignore environ NEXT_PUBLIC
+const PAYMENT_ENABLED = (process?.env?.NEXT_PUBLIC_PAYMENTS_ENABLED ?? 'true') !== 'false'
+
 function BookingClient() {
   const searchParams = useSearchParams()
   const sportParam = searchParams.get('sport') as SportType | null
@@ -25,7 +28,11 @@ function BookingClient() {
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null)
 
   const handleBookingSuccess = (bookingId: string) => {
-    router.push(`/payment?booking=${bookingId}`)
+    if (PAYMENT_ENABLED) {
+      router.push(`/payment?booking=${bookingId}`)
+    } else {
+      router.push('/profile')
+    }
   }
 
   const getBackgroundImage = () => {

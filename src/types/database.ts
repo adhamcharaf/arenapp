@@ -3,7 +3,7 @@
 export type AuthType = 'account' | 'guest'
 export type SportType = 'padel' | 'football'
 export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show'
-export type PaymentProvider = 'wave' | 'orange' | 'mtn'
+export type PaymentProvider = 'wave' | 'orange' | 'mtn' | 'test' // Ajout mode test
 export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded'
 
 export interface User {

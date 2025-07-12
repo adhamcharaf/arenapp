@@ -5,6 +5,9 @@ export function usePayments() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // @ts-ignore NEXT_PUBLIC env est injecté côté client par Next.js
+  const PAYMENT_ENABLED = (process?.env?.NEXT_PUBLIC_PAYMENTS_ENABLED ?? 'true') !== 'false'
+
   const initiatePayment = async (paymentData: {
     booking_id: string
     provider: PaymentProvider
@@ -14,6 +17,17 @@ export function usePayments() {
     try {
       setLoading(true)
       setError(null)
+
+      if (!PAYMENT_ENABLED) {
+        // PAYMENT_DISABLED: simulation immédiate
+        await new Promise((res) => setTimeout(res, 2500))
+        return {
+          success: true,
+          message: 'Paiement simulé (mode test)',
+          payment_url: null,
+          mode: 'mock'
+        } as any
+      }
 
       const endpoint = getPaymentEndpoint(paymentData.provider)
       
@@ -47,6 +61,12 @@ export function usePayments() {
     try {
       setLoading(true)
       setError(null)
+
+      if (!PAYMENT_ENABLED) {
+        // PAYMENT_DISABLED: retourne statut complété directement
+        await new Promise((res) => setTimeout(res, 500))
+        return { status: 'completed', mode: 'mock' } as any
+      }
 
       const endpoint = getPaymentEndpoint(provider)
       

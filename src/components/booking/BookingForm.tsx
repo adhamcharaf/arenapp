@@ -9,6 +9,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PHONE_REGEX } from '@/utils/constants'
 import { LoadingSpinner } from '@/components/common/LoadingStates'
+import MockPayment from '@/components/booking/MockPayment'
+// @ts-ignore environ NEXT_PUBLIC
+const PAYMENT_ENABLED = (process?.env?.NEXT_PUBLIC_PAYMENTS_ENABLED ?? 'true') !== 'false'
 
 interface BookingFormProps {
   venue: Venue
@@ -18,7 +21,7 @@ interface BookingFormProps {
 
 export default function BookingForm({ venue, slot, onSuccess }: BookingFormProps) {
   const { user, authType } = useAuth()
-  const { createBooking } = useBookings()
+  const { createBooking, updateBooking } = useBookings()
   const { initiatePayment, loading: paymentLoading } = usePayments()
 
   const [phone, setPhone] = useState<string>('')
@@ -32,6 +35,10 @@ export default function BookingForm({ venue, slot, onSuccess }: BookingFormProps
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showMock, setShowMock] = useState<{
+    amount: number
+    bookingId: string
+  } | null>(null)
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -62,18 +69,24 @@ export default function BookingForm({ venue, slot, onSuccess }: BookingFormProps
       
       console.log('✅ Réservation créée côté client:', booking)
 
-      // Initier le paiement Wave CI
-      const paymentResponse = await initiatePayment({
-        booking_id: booking.id,
-        provider: 'wave',
-        amount: booking.total_amount,
-        phone_number: phone,
-      })
+      if (PAYMENT_ENABLED) {
+        // Initier le paiement Wave CI
+        const paymentResponse = await initiatePayment({
+          booking_id: booking.id,
+          provider: 'wave',
+          amount: booking.total_amount,
+          phone_number: phone,
+        })
 
-      if (paymentResponse?.payment_url) {
-        window.location.href = paymentResponse.payment_url
+        if (paymentResponse?.payment_url) {
+          window.location.href = paymentResponse.payment_url
+        } else {
+          onSuccess?.(booking.id)
+        }
       } else {
-        onSuccess?.(booking.id)
+        // Mode test : confirmer directement la réservation
+        await updateBooking(booking.id, { status: 'confirmed' })
+        setShowMock({ amount: booking.total_amount, bookingId: booking.id })
       }
     } catch (err) {
       console.error('❌ Erreur lors de la réservation:', err)
@@ -113,8 +126,18 @@ export default function BookingForm({ venue, slot, onSuccess }: BookingFormProps
 
       <Button type="submit" disabled={submitting || paymentLoading} variant="green" className="w-full flex items-center justify-center gap-2">
         {submitting || paymentLoading && <LoadingSpinner />}
-        {submitting || paymentLoading ? 'Réservation…' : 'Réserver et payer avec Wave'}
+        {submitting || paymentLoading ? 'Réservation…' : PAYMENT_ENABLED ? 'Réserver et payer avec Wave' : 'Réserver (mode test)'}
       </Button>
+
+      {showMock && (
+        <MockPayment
+          amount={showMock.amount}
+          onSuccess={() => {
+            setShowMock(null)
+            onSuccess?.(showMock.bookingId)
+          }}
+        />
+      )}
     </form>
   )
 }

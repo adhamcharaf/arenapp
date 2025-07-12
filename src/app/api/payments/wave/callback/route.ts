@@ -1,8 +1,18 @@
+// @ts-nocheck
+// PAYMENT_DISABLED: Callback Wave CI désactivé (mode test)
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
 
-// POST /api/payments/wave/callback - Webhook Wave CI
-export async function POST(request: NextRequest) {
+export async function GET() {
+  return NextResponse.json({ success: false, message: 'Callback désactivé (mode test)' }, { status: 200 })
+}
+
+export async function POST() {
+  return NextResponse.json({ success: false, message: 'Callback désactivé (mode test)' }, { status: 200 })
+}
+
+// Les fonctions originales sont conservées ci-dessous mais désactivées
+// PAYMENT_DISABLED
+async function POST_WAVE_CALLBACK_DISABLED(request: NextRequest) {
   try {
     const body = await request.json()
     console.log('Wave CI callback received:', body)
@@ -122,7 +132,7 @@ export async function POST(request: NextRequest) {
 }
 
 // GET /api/payments/wave/callback - Pour tester le callback
-export async function GET(_request: NextRequest) {
+async function GET_WAVE_CALLBACK_DISABLED(_request: NextRequest) {
   return NextResponse.json({
     message: 'Wave CI callback endpoint',
     status: 'active'

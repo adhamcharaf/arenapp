@@ -4,6 +4,9 @@ import "./globals.css";
 import Header from '@/components/common/Header'
 import Footer from '@/components/common/Footer'
 
+// @ts-ignore environ NEXT_PUBLIC
+const PAYMENT_ENABLED = (process?.env?.NEXT_PUBLIC_PAYMENTS_ENABLED ?? 'true') !== 'false'
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -30,6 +33,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white`}
       >
         <Header />
+        {!PAYMENT_ENABLED && (
+          <div className="bg-ci-orange text-white text-center py-2 text-sm">
+            Mode Test - Paiements Désactivés
+          </div>
+        )}
         <main className="min-h-screen bg-white">
           {children}
         </main>
