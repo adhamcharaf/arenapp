@@ -1,3 +1,33 @@
+// PAYMENT_DISABLED: Webhook Wave CI temporairement désactivé pour les tests
+// Pour réactiver: restaurer le code original depuis le backup
+
+import { NextRequest, NextResponse } from 'next/server'
+
+// POST /api/payments/wave/callback - Version mock pour les tests
+export async function POST(request: NextRequest) {
+  return NextResponse.json(
+    { 
+      error: 'Webhooks temporairement désactivés',
+      message: 'Mode test activé - Callbacks non traités',
+      mock_mode: true
+    },
+    { status: 503 }
+  )
+}
+
+// GET /api/payments/wave/callback - Version mock pour les tests
+export async function GET(request: NextRequest) {
+  return NextResponse.json({
+    message: 'Wave CI callback endpoint (Mode Test)',
+    status: 'disabled',
+    mock_mode: true
+  })
+}
+
+/*
+// PAYMENT_DISABLED: Code callback Wave CI original (sauvegardé pour réactivation)
+// TODO: Restaurer ce code quand les paiements seront réactivés
+
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
@@ -128,3 +158,5 @@ export async function GET(_request: NextRequest) {
     status: 'active'
   })
 }
+
+*/

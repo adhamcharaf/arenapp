@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PHONE_REGEX } from '@/utils/constants'
 import { LoadingSpinner } from '@/components/common/LoadingStates'
+import MockPayment from '@/components/common/MockPayment'
 
 interface BookingFormProps {
   venue: Venue
@@ -19,9 +20,14 @@ interface BookingFormProps {
 export default function BookingForm({ venue, slot, onSuccess }: BookingFormProps) {
   const { user, authType } = useAuth()
   const { createBooking } = useBookings()
-  const { initiatePayment, loading: paymentLoading } = usePayments()
+  const { initiatePayment, loading: paymentLoading, isPaymentEnabled } = usePayments()
 
   const [phone, setPhone] = useState<string>('')
+  const [notes, setNotes] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [showMockPayment, setShowMockPayment] = useState(false)
+  const [currentBooking, setCurrentBooking] = useState<any>(null)
 
   // Auto-fill phone when conditions are met
   useEffect(() => {
@@ -29,9 +35,6 @@ export default function BookingForm({ venue, slot, onSuccess }: BookingFormProps
       setPhone(user.phone)
     }
   }, [authType, user])
-  const [notes, setNotes] = useState('')
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -62,7 +65,21 @@ export default function BookingForm({ venue, slot, onSuccess }: BookingFormProps
       
       console.log('✅ Réservation créée côté client:', booking)
 
-      // Initier le paiement Wave CI
+      // PAYMENT_DISABLED: Mode mock pour les tests
+      if (!isPaymentEnabled) {
+        setCurrentBooking({
+          id: booking.id,
+          venue_name: venue.name,
+          total_amount: booking.total_amount,
+          phone_number: phone
+        })
+        setShowMockPayment(true)
+        setSubmitting(false)
+        return
+      }
+
+      // PAYMENT_DISABLED: Code Wave CI original (temporairement désactivé)
+      /*
       const paymentResponse = await initiatePayment({
         booking_id: booking.id,
         provider: 'wave',
@@ -75,6 +92,10 @@ export default function BookingForm({ venue, slot, onSuccess }: BookingFormProps
       } else {
         onSuccess?.(booking.id)
       }
+      */
+
+      // Fallback temporaire
+      setError('Paiements temporairement désactivés')
     } catch (err) {
       console.error('❌ Erreur lors de la réservation:', err)
       setError((err as Error).message)
@@ -82,9 +103,54 @@ export default function BookingForm({ venue, slot, onSuccess }: BookingFormProps
     setSubmitting(false)
   }
 
+  const handleMockPaymentSuccess = async (bookingId: string) => {
+    // Confirmer la réservation via l'API mock
+    try {
+      const response = await fetch('/api/bookings/confirm', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ booking_id: bookingId })
+      })
+      
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Erreur lors de la confirmation')
+      }
+      
+      console.log('✅ Réservation confirmée automatiquement:', data)
+      onSuccess?.(bookingId)
+    } catch (err) {
+      console.error('❌ Erreur lors de la confirmation mock:', err)
+      setError('Erreur lors de la validation de la réservation')
+    }
+    setShowMockPayment(false)
+    setCurrentBooking(null)
+  }
+
+  const handleMockPaymentCancel = () => {
+    setShowMockPayment(false)
+    setCurrentBooking(null)
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="border p-4 rounded-md bg-gray-50 border-l-4 border-ci-green">
+    <>
+      {/* Banner Mode Test */}
+      {!isPaymentEnabled && (
+        <div className="mb-4 p-3 bg-orange-100 border border-orange-300 rounded-lg">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-orange-500 rounded-full animate-pulse"></div>
+            <p className="text-sm font-medium text-orange-800">
+              Mode Test - Paiements Désactivés
+            </p>
+          </div>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="border p-4 rounded-md bg-gray-50 border-l-4 border-ci-green">
         <h3 className="font-semibold text-ci-green mb-2">Récapitulatif</h3>
         <p><strong>Terrain :</strong> {venue.name}</p>
         <p><strong>Date :</strong> {new Date(slot.start_time).toLocaleDateString('fr-FR')}</p>
@@ -113,8 +179,18 @@ export default function BookingForm({ venue, slot, onSuccess }: BookingFormProps
 
       <Button type="submit" disabled={submitting || paymentLoading} variant="green" className="w-full flex items-center justify-center gap-2">
         {submitting || paymentLoading && <LoadingSpinner />}
-        {submitting || paymentLoading ? 'Réservation…' : 'Réserver et payer avec Wave'}
+        {submitting || paymentLoading ? 'Réservation…' : !isPaymentEnabled ? 'Réserver (Mode Test)' : 'Réserver et payer avec Wave'}
       </Button>
     </form>
+
+    {/* Modal MockPayment */}
+    {showMockPayment && currentBooking && (
+      <MockPayment
+        booking={currentBooking}
+        onSuccess={handleMockPaymentSuccess}
+        onCancel={handleMockPaymentCancel}
+      />
+    )}
+  </>
   )
 }

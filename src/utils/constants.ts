@@ -1,53 +1,17 @@
-// Constantes pour l'application ARENAPP Côte d'Ivoire
+// Constants pour ARENAPP - Réservation sportive Côte d'Ivoire
 
-export const TIMEZONE = 'Africa/Abidjan'
-export const CURRENCY = 'FCFA'
+// Feature flags - Mode Test Activé
+export const PAYMENT_ENABLED = false // Désactivé temporairement pour les tests
 
-export const SPORT_TYPES = {
-  padel: 'Padel',
-  football: 'Football',
-} as const
+// Validation
+export const PHONE_REGEX = /^(\+225)?[0-9]{8,10}$/
 
-export const BOOKING_STATUS = {
-  pending: 'En attente',
-  confirmed: 'Confirmé',
-  cancelled: 'Annulé',
-  completed: 'Terminé',
-  no_show: 'Absent',
-} as const
-
-export const PAYMENT_PROVIDERS = {
-  wave: 'Wave CI',
-  orange: 'Orange Money',
-  mtn: 'MTN Mobile Money',
-} as const
-
-export const PAYMENT_STATUS = {
-  pending: 'En attente',
-  completed: 'Terminé',
-  failed: 'Échec',
-  refunded: 'Remboursé',
-} as const
-
-export const AUTH_TYPES = {
-  account: 'Compte',
-  guest: 'Invité',
-} as const
-
-// Formats téléphone Côte d'Ivoire
-export const PHONE_REGEX = /^(\+225|225|0)?[0-9]{8,10}$/
-export const PHONE_PREFIXES = ['01', '02', '03', '05', '07', '08', '09']
-
-// Horaires d'ouverture par défaut
-export const DEFAULT_HOURS = {
-  start: '06:00',
-  end: '22:00',
-  slotDuration: 60, // minutes
+// Couleurs Côte d'Ivoire
+export const CI_COLORS = {
+  green: '#00B04F',
+  orange: '#FF8500',
+  white: '#FFFFFF'
 }
 
-// Limites système
-export const LIMITS = {
-  maxBookingsPerUser: 3,
-  maxAdvanceBookingDays: 30,
-  minBookingNoticeMins: 30,
-}
+// Configuration Mock Payment
+export const MOCK_PAYMENT_DELAY = 2500 // 2.5 secondes pour simuler le délai de traitement

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { PaymentProvider } from '@/types/database'
+import { PAYMENT_ENABLED } from '@/utils/constants'
 
 export function usePayments() {
   const [loading, setLoading] = useState(false)
@@ -15,6 +16,19 @@ export function usePayments() {
       setLoading(true)
       setError(null)
 
+      // PAYMENT_DISABLED: Mode mock pour les tests
+      if (!PAYMENT_ENABLED) {
+        return {
+          success: true,
+          mock_mode: true,
+          payment_id: `mock_${Date.now()}`,
+          booking_id: paymentData.booking_id,
+          message: 'Mode test - Paiement simulé'
+        }
+      }
+
+      // PAYMENT_DISABLED: Code Wave CI original (temporairement désactivé)
+      /*
       const endpoint = getPaymentEndpoint(paymentData.provider)
       
       const response = await fetch(endpoint, {
@@ -32,6 +46,10 @@ export function usePayments() {
       }
 
       return data
+      */
+
+      // Fallback pour le mode désactivé
+      throw new Error('Paiements temporairement désactivés')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue')
       throw err
@@ -48,6 +66,18 @@ export function usePayments() {
       setLoading(true)
       setError(null)
 
+      // PAYMENT_DISABLED: Mode mock pour les tests
+      if (!PAYMENT_ENABLED) {
+        return {
+          success: true,
+          status: 'completed',
+          mock_mode: true,
+          message: 'Mode test - Statut simulé'
+        }
+      }
+
+      // PAYMENT_DISABLED: Code Wave CI original (temporairement désactivé)
+      /*
       const endpoint = getPaymentEndpoint(provider)
       
       const response = await fetch(`${endpoint}?session_id=${sessionId}`)
@@ -58,6 +88,10 @@ export function usePayments() {
       }
 
       return data
+      */
+
+      // Fallback pour le mode désactivé
+      throw new Error('Vérification de paiement temporairement désactivée')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue')
       throw err
@@ -83,6 +117,7 @@ export function usePayments() {
     loading,
     error,
     initiatePayment,
-    checkPaymentStatus
+    checkPaymentStatus,
+    isPaymentEnabled: PAYMENT_ENABLED
   }
 }

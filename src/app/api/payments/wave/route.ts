@@ -1,3 +1,36 @@
+// PAYMENT_DISABLED: API Wave CI temporairement désactivée pour les tests
+// Pour réactiver: restaurer le code original depuis le backup
+
+import { NextRequest, NextResponse } from 'next/server'
+
+// POST /api/payments/wave - Version mock pour les tests
+export async function POST(request: NextRequest) {
+  return NextResponse.json(
+    { 
+      error: 'Paiements temporairement désactivés',
+      message: 'Mode test activé - Utilisez le simulateur de paiement',
+      mock_mode: true
+    },
+    { status: 503 }
+  )
+}
+
+// GET /api/payments/wave - Version mock pour les tests
+export async function GET(request: NextRequest) {
+  return NextResponse.json(
+    { 
+      error: 'Paiements temporairement désactivés',
+      message: 'Mode test activé - Utilisez le simulateur de paiement',
+      mock_mode: true
+    },
+    { status: 503 }
+  )
+}
+
+/*
+// PAYMENT_DISABLED: Code Wave CI original (sauvegardé pour réactivation)
+// TODO: Restaurer ce code quand les paiements seront réactivés
+
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { paymentSchema, validatePhone } from '@/utils/validation'
@@ -232,3 +265,5 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
+*/
