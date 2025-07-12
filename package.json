@@ -37,13 +37,14 @@
     "eslint": "^9",
     "eslint-config-next": "15.3.5",
     "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0",
+    "jest-environment-jsdom": "^29.6.3",
     "prettier": "^3.3.0",
     "prettier-plugin-tailwindcss": "^0.6.0",
     "supabase": "^1.188.0",
     "tailwindcss": "^4",
     "ts-jest": "^29.1.1",
-    "typescript": "^5"
+    "typescript": "^5",
+    "@testing-library/jest-dom": "^6.1.4"
   },
   "keywords": [
     "nextjs",

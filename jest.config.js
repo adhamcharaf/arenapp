@@ -1,10 +1,17 @@
-/** @type {import('ts-jest').JestConfigWithTsJest} */
-module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'jsdom',
+const nextJest = require('next/jest')
+
+const createJestConfig = nextJest({
+  dir: './',
+})
+
+const customConfig = {
+  testEnvironment: 'jest-environment-jsdom',
   testMatch: ['**/?(*.)+(test).[jt]s?(x)'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1'
   },
-  passWithNoTests: true
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+  passWithNoTests: true,
 }
+
+module.exports = createJestConfig(customConfig)
