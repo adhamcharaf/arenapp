@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic'
 
 import { useSearchParams, useRouter } from 'next/navigation'
+import React from 'react'
 import { useState, Suspense } from 'react'
 import { useVenues } from '@/hooks/useVenues'
 import VenueCard from '@/components/booking/VenueCard'

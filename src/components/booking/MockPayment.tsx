@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import React from 'react'
 import { LoadingSpinner } from '@/components/common/LoadingStates'
 
 interface MockPaymentProps {
