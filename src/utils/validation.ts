@@ -68,8 +68,11 @@ export const timeSlotSchema = z.object({
 
 // Utilitaires de validation
 export const validatePhone = (phone: string): string => {
+  console.log('📞 Validation téléphone - Input:', phone)
+  
   // Normaliser le numéro de téléphone ivoirien - doit être exactement 10 chiffres
   let normalized = phone.replace(/\s+/g, '')
+  console.log('📞 Après suppression espaces:', normalized)
   
   if (normalized.startsWith('+225')) {
     normalized = normalized.substring(4)
@@ -79,12 +82,18 @@ export const validatePhone = (phone: string): string => {
     normalized = normalized.substring(1)
   }
   
-  // Vérifier que c'est exactement 10 chiffres
+  console.log('📞 Après normalisation préfixe:', normalized)
+  
+  // Vérifier que c'est exactement 10 chiffres (format ivoirien standard)
   if (!/^[0-9]{10}$/.test(normalized)) {
-    throw new Error('Le numéro de téléphone doit contenir exactement 10 chiffres')
+    const error = `Le numéro de téléphone doit contenir exactement 10 chiffres (reçu: ${normalized.length} chiffres)`
+    console.log('❌ Erreur validation:', error)
+    throw new Error(error)
   }
   
-  return `+225${normalized}`
+  const result = `+225${normalized}`
+  console.log('✅ Téléphone validé:', result)
+  return result
 }
 
 export const validatePhone10Digits = (phone: string): boolean => {

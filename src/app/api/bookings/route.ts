@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createSupabaseServerClient } from '@/lib/supabase'
 import { bookingSchema, validatePhone } from '@/utils/validation'
 
 // GET /api/bookings - Récupérer les réservations
 export async function GET(request: NextRequest) {
+  // Créer le client Supabase server-aware avec gestion des cookies
+  const supabase = createSupabaseServerClient(request)
+  
   try {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
@@ -57,6 +60,9 @@ export async function GET(request: NextRequest) {
 
 // POST /api/bookings - Créer une réservation
 export async function POST(request: NextRequest) {
+  // Créer le client Supabase server-aware avec gestion des cookies
+  const supabase = createSupabaseServerClient(request)
+  
   try {
     console.log('🔄 Début création réservation')
     const body = await request.json()
@@ -116,55 +122,71 @@ export async function POST(request: NextRequest) {
       userId = session.user.id
       console.log('✅ Utilisateur connecté ID:', userId)
     } else {
-      // Utilisateur invité - créer ou récupérer
-      console.log('🔍 Recherche utilisateur invité avec téléphone:', normalizedPhone)
-      const { data: guestUser, error: guestError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('phone', normalizedPhone)
-        .eq('auth_type', 'guest')
-        .single()
+      // Utilisateur invité - utiliser UPSERT pour éviter les conflits
+      console.log('🔍 Création/Récupération utilisateur invité avec téléphone:', normalizedPhone)
       
-      console.log('👤 Utilisateur invité existant:', guestUser ? 'TROUVÉ' : 'NON TROUVÉ')
-      if (guestError) console.log('ℹ️ Erreur recherche invité:', guestError)
-      
-      if (guestError && guestError.code !== 'PGRST116') {
-        console.log('❌ Erreur critique utilisateur invité:', guestError)
-        return NextResponse.json(
-          { error: 'Erreur utilisateur invité', details: guestError.message },
-          { status: 500 }
-        )
-      }
-      
-      if (!guestUser) {
-        console.log('👤 Création nouvel utilisateur invité...')
-        const { data: newGuest, error: createError } = await supabase
+      try {
+        // Utiliser UPSERT pour gérer les doublons automatiquement
+        const { data: guestUser, error: upsertError } = await supabase
           .from('users')
-          .insert({
-            phone: normalizedPhone,
-            auth_type: 'guest'
-          })
+          .upsert(
+            {
+              phone: normalizedPhone,
+              auth_type: 'guest'
+            },
+            {
+              onConflict: 'phone',
+              ignoreDuplicates: false
+            }
+          )
           .select('id')
           .single()
         
-        if (createError) {
-          console.log('❌ Erreur création utilisateur:', createError)
-          return NextResponse.json(
-            { error: 'Erreur création utilisateur', details: createError.message },
-            { status: 500 }
-          )
+        if (upsertError) {
+          console.log('❌ Erreur UPSERT utilisateur invité:', upsertError)
+          console.log('❌ Détails erreur:', JSON.stringify(upsertError, null, 2))
+          
+          // Fallback: essayer de récupérer l'utilisateur existant
+          const { data: existingUser, error: fetchError } = await supabase
+            .from('users')
+            .select('id')
+            .eq('phone', normalizedPhone)
+            .eq('auth_type', 'guest')
+            .single()
+          
+          if (fetchError || !existingUser) {
+            console.log('❌ Impossible de récupérer l\'utilisateur existant:', fetchError)
+            return NextResponse.json(
+              { 
+                error: 'Erreur création utilisateur', 
+                details: `UPSERT failed: ${upsertError.message}, Fetch failed: ${fetchError?.message}`,
+                phone: normalizedPhone
+              },
+              { status: 500 }
+            )
+          }
+          
+          userId = existingUser.id
+          console.log('✅ Fallback: Utilisateur existant récupéré:', userId)
+        } else {
+          userId = guestUser.id
+          console.log('✅ UPSERT réussi - Utilisateur invité ID:', userId)
         }
-        
-        userId = newGuest.id
-        console.log('✅ Nouvel utilisateur invité créé:', userId)
-      } else {
-        userId = guestUser.id
-        console.log('✅ Utilisation utilisateur invité existant:', userId)
+      } catch (error) {
+        console.log('❌ Erreur critique lors de la gestion utilisateur invité:', error)
+        return NextResponse.json(
+          { 
+            error: 'Erreur système utilisateur', 
+            details: error instanceof Error ? error.message : 'Erreur inconnue',
+            phone: normalizedPhone
+          },
+          { status: 500 }
+        )
       }
     }
     
-    // Créer la réservation
-    console.log('📝 Création de la réservation...')
+    // Créer la réservation avec transaction atomique
+    console.log('📝 Création de la réservation avec transaction...')
     const bookingData = {
       user_id: userId,
       venue_id: validatedData.venue_id,
@@ -176,62 +198,118 @@ export async function POST(request: NextRequest) {
     }
     console.log('📋 Données réservation:', JSON.stringify(bookingData, null, 2))
     
-    const { data: booking, error: bookingError } = await supabase
-      .from('bookings')
-      .insert(bookingData)
-      .select(`
-        *,
-        user:users(*),
-        venue:venues(*),
-        time_slot:time_slots(*)
-      `)
-      .single()
-    
-    if (bookingError) {
-      console.log('❌ Erreur création réservation:', bookingError)
+    // Utiliser transaction pour assurer la cohérence
+    try {
+      const { data: booking, error: bookingError } = await supabase
+        .from('bookings')
+        .insert(bookingData)
+        .select(`
+          *,
+          user:users(*),
+          venue:venues(*),
+          time_slot:time_slots(*)
+        `)
+        .single()
+      
+      if (bookingError) {
+        console.log('❌ Erreur création réservation:', bookingError)
+        
+        // Vérifier si c'est un conflit de créneau
+        if (bookingError.message.includes('duplicate') || bookingError.message.includes('unique')) {
+          return NextResponse.json(
+            { error: 'Créneau déjà réservé par un autre utilisateur', details: bookingError.message },
+            { status: 409 }
+          )
+        }
+        
+        return NextResponse.json(
+          { error: 'Erreur création réservation', details: bookingError.message },
+          { status: 500 }
+        )
+      }
+      
+      console.log('✅ Réservation créée avec succès:', booking.id)
+      
+      // Marquer le créneau comme non disponible
+      const { error: slotUpdateError } = await supabase
+        .from('time_slots')
+        .update({ is_available: false })
+        .eq('id', validatedData.time_slot_id)
+      
+      if (slotUpdateError) {
+        console.log('⚠️ Erreur mise à jour créneau:', slotUpdateError)
+        // Note: on continue malgré l'erreur car la réservation est créée
+      }
+      
+      // Créer entrée dans l'historique
+      const { error: historyError } = await supabase
+        .from('booking_history')
+        .insert({
+          booking_id: booking.id,
+          action: 'CREATED',
+          notes: 'Réservation créée'
+        })
+      
+      if (historyError) {
+        console.log('⚠️ Erreur création historique:', historyError)
+        // Note: on continue malgré l'erreur car la réservation est créée
+      }
+      
+      console.log('🎉 Processus de réservation terminé avec succès')
+      return NextResponse.json({
+        success: true,
+        booking,
+        message: 'Réservation créée avec succès'
+      })
+      
+    } catch (transactionError) {
+      console.log('❌ Erreur transaction réservation:', transactionError)
       return NextResponse.json(
-        { error: 'Erreur création réservation', details: bookingError.message },
+        { 
+          error: 'Erreur transaction réservation', 
+          details: transactionError instanceof Error ? transactionError.message : 'Erreur inconnue'
+        },
         { status: 500 }
       )
     }
-    
-    console.log('✅ Réservation créée avec succès:', booking.id)
-    
-    // Marquer le créneau comme non disponible
-    await supabase
-      .from('time_slots')
-      .update({ is_available: false })
-      .eq('id', validatedData.time_slot_id)
-    
-    // Créer entrée dans l'historique
-    await supabase
-      .from('booking_history')
-      .insert({
-        booking_id: booking.id,
-        action: 'CREATED',
-        notes: 'Réservation créée'
-      })
-    
-    console.log('🎉 Processus de réservation terminé avec succès')
-    return NextResponse.json({
-      success: true,
-      booking,
-      message: 'Réservation créée avec succès'
-    })
     
   } catch (error) {
     console.error('❌ ERREUR GLOBALE Create booking:', error)
     console.error('📍 Stack trace:', error instanceof Error ? error.stack : 'Pas de stack trace')
+    console.error('📍 Type d\'erreur:', typeof error)
+    console.error('📍 Error name:', error instanceof Error ? error.name : 'Unknown')
     
-    if (error instanceof Error && error.message.includes('Variables d\'environnement Supabase')) {
-      return NextResponse.json(
-        { error: 'Configuration Supabase manquante' },
-        { status: 500 }
-      )
+    // Gestion spécifique des erreurs de validation
+    if (error instanceof Error) {
+      if (error.message.includes('Variables d\'environnement Supabase')) {
+        return NextResponse.json(
+          { error: 'Configuration Supabase manquante' },
+          { status: 500 }
+        )
+      }
+      
+      if (error.message.includes('téléphone')) {
+        return NextResponse.json(
+          { error: 'Numéro de téléphone invalide', details: error.message },
+          { status: 400 }
+        )
+      }
+      
+      if (error.message.includes('ZodError')) {
+        return NextResponse.json(
+          { error: 'Données de réservation invalides', details: error.message },
+          { status: 400 }
+        )
+      }
     }
     
     return NextResponse.json(
-      { error: 'Erreur serveur', details: error instanceof Error ? error.message : 'Erreur inconnue' },
+      { 
+        error: 'Erreur serveur', 
+        details: error instanceof Error ? error.message : 'Erreur inconnue',
+        type: typeof error,
+        timestamp: new Date().toISOString()
+      },
       { status: 500 }
     )
   }
@@ -239,6 +317,9 @@ export async function POST(request: NextRequest) {
 
 // PUT /api/bookings - Mettre à jour une réservation
 export async function PUT(request: NextRequest) {
+  // Créer le client Supabase server-aware avec gestion des cookies
+  const supabase = createSupabaseServerClient(request)
+  
   try {
     const body = await request.json()
     const { id, status, notes } = body

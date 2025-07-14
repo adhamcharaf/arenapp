@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createSupabaseServerClient } from '@/lib/supabase'
 
 // POST /api/payments/wave/callback - Webhook Wave CI
 export async function POST(request: NextRequest) {
+  // Créer le client Supabase server-aware avec gestion des cookies
+  const supabase = createSupabaseServerClient(request)
+  
   try {
     const body = await request.json()
     console.log('Wave CI callback received:', body)

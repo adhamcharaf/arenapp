@@ -10,10 +10,5 @@
       "mcp__supabase__execute_sql"
     ],
     "deny": []
-  },
-  "mcpServers": {
-    "puppeteer": {
-      "command": "mcp-server-puppeteer"
-    }
   }
 }

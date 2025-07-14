@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createSupabaseServerClient } from '@/lib/supabase'
 import { paymentSchema, validatePhone } from '@/utils/validation'
 
 // Configuration Wave CI
@@ -12,6 +12,9 @@ if (!WAVE_CI_API_KEY) {
 
 // POST /api/payments/wave - Initier paiement Wave CI
 export async function POST(request: NextRequest) {
+  // Créer le client Supabase server-aware avec gestion des cookies
+  const supabase = createSupabaseServerClient(request)
+  
   try {
     const body = await request.json()
     const validatedData = paymentSchema.parse(body)
@@ -146,6 +149,9 @@ export async function POST(request: NextRequest) {
 
 // GET /api/payments/wave - Vérifier statut paiement Wave
 export async function GET(request: NextRequest) {
+  // Créer le client Supabase server-aware avec gestion des cookies
+  const supabase = createSupabaseServerClient(request)
+  
   try {
     const { searchParams } = new URL(request.url)
     const sessionId = searchParams.get('session_id')

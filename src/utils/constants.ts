@@ -34,7 +34,8 @@ export const AUTH_TYPES = {
   guest: 'Invité',
 } as const
 
-// Formats téléphone Côte d'Ivoire - Exactement 10 chiffres
+// Formats téléphone Côte d'Ivoire - Exactement 10 chiffres après normalisation
+// Exemple: +2250747666667 (format international) -> 0747666667 (10 chiffres)
 export const PHONE_REGEX = /^(\+225|225|0)?[0-9]{10}$/
 export const PHONE_REGEX_STRICT = /^[0-9]{10}$/
 export const PHONE_PREFIXES = ['01', '02', '03', '05', '07', '08', '09']
