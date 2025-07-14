@@ -5,6 +5,7 @@ export type SportType = 'padel' | 'football'
 export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show'
 export type PaymentProvider = 'wave' | 'orange' | 'mtn'
 export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded'
+export type PaymentMode = 'live' | 'mock'
 
 export interface User {
   id: string
@@ -82,4 +83,14 @@ export interface AuditLog {
   user_id?: string
   changes: Record<string, unknown>
   created_at: string
+}
+
+// Types pour le mode mock des paiements
+export interface MockPaymentResponse {
+  success: true
+  payment_id: string
+  checkout_url?: string
+  session_id: string
+  message: string
+  mock: true
 }

@@ -23,9 +23,20 @@ function BookingClient() {
 
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null)
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null)
+  const [shouldRefreshSlots, setShouldRefreshSlots] = useState(false)
 
   const handleBookingSuccess = (bookingId: string) => {
     router.push(`/payment?booking=${bookingId}`)
+  }
+
+  const handleBookingConflict = () => {
+    // Reset selected slot and trigger refresh when conflict occurs
+    setSelectedSlot(null)
+    setShouldRefreshSlots(true)
+  }
+
+  const handleRefreshComplete = () => {
+    setShouldRefreshSlots(false)
   }
 
   const getBackgroundImage = () => {
@@ -88,7 +99,12 @@ function BookingClient() {
             <Button variant="ghost" size="sm" onClick={() => setSelectedVenue(null)}>← Changer de terrain</Button>
             <h2 className="text-2xl font-semibold text-ci-orange">Choisissez un créneau pour {selectedVenue.name}</h2>
           </div>
-          <TimeSlotPicker venueId={selectedVenue.id} onSelect={setSelectedSlot} />
+          <TimeSlotPicker 
+            venueId={selectedVenue.id} 
+            onSelect={setSelectedSlot} 
+            shouldRefresh={shouldRefreshSlots}
+            onRefreshComplete={handleRefreshComplete}
+          />
         </div>
       )}
 
@@ -96,7 +112,12 @@ function BookingClient() {
       {selectedVenue && selectedSlot && (
         <div className="space-y-6">
           <Button variant="ghost" size="sm" onClick={() => setSelectedSlot(null)}>← Changer de créneau</Button>
-          <BookingForm venue={selectedVenue} slot={selectedSlot} onSuccess={handleBookingSuccess} />
+          <BookingForm 
+            venue={selectedVenue} 
+            slot={selectedSlot} 
+            onSuccess={handleBookingSuccess}
+            onConflict={handleBookingConflict}
+          />
         </div>
       )}
       </div>

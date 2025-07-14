@@ -22,15 +22,28 @@ const getSlotClasses = (slot: TimeSlot) => {
 interface TimeSlotPickerProps {
   venueId: string
   onSelect: (slot: TimeSlot) => void
+  shouldRefresh?: boolean
+  onRefreshComplete?: () => void
 }
 
-export default function TimeSlotPicker({ venueId, onSelect }: TimeSlotPickerProps) {
+export default function TimeSlotPicker({ venueId, onSelect, shouldRefresh, onRefreshComplete }: TimeSlotPickerProps) {
   const [selectedDate, setSelectedDate] = useState<string>(() => {
     const today = new Date()
     return today.toISOString().split('T')[0]
   })
+  const [bookingSlotId, setBookingSlotId] = useState<string | null>(null)
 
-  const { slots, loading, error } = useTimeSlots(venueId, selectedDate)
+  const { slots, loading, error, refreshSlots } = useTimeSlots(venueId, selectedDate)
+
+
+  // Watch for shouldRefresh prop changes to trigger refresh
+  React.useEffect(() => {
+    if (shouldRefresh) {
+      setBookingSlotId(null)
+      refreshSlots()
+      onRefreshComplete?.()
+    }
+  }, [shouldRefresh, refreshSlots, onRefreshComplete])
 
   // On affiche tous les créneaux, le style sera déterminé par la fonction ci-dessus
 
@@ -67,18 +80,28 @@ export default function TimeSlotPicker({ venueId, onSelect }: TimeSlotPickerProp
 
           const isPast = isPastTimeSlot(slot.start_time)
           const isUnavailable = !slot.is_available || isPast
+          const isBookingInProgress = bookingSlotId === slot.id
+
 
           return (
             <div
               key={slot.id}
               className={getSlotClasses(slot)}
               onClick={() => {
-                if (isUnavailable) return
+                if (isUnavailable || isBookingInProgress) return
+                setBookingSlotId(slot.id)
                 onSelect(slot)
               }}
             >
               <div className="font-medium">{start} - {end}</div>
-              <div className="text-sm opacity-90">{isUnavailable ? 'Occupé' : 'Libre'}</div>
+              <div className="text-sm opacity-90 flex items-center gap-1">
+                {isBookingInProgress && (
+                  <div className="w-4 h-4">
+                    <LoadingSpinner />
+                  </div>
+                )}
+                {isBookingInProgress ? 'Réservation...' : (isUnavailable ? 'Occupé' : 'Libre')}
+              </div>
             </div>
           )
         })}

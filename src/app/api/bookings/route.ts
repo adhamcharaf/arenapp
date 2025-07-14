@@ -198,8 +198,30 @@ export async function POST(request: NextRequest) {
     }
     console.log('📋 Données réservation:', JSON.stringify(bookingData, null, 2))
     
-    // Utiliser transaction pour assurer la cohérence
+    // Utiliser transaction pour assurer la cohérence atomique
     try {
+      // Marquer le créneau comme non disponible AVANT de créer la réservation
+      // Cela prévient les conditions de course (race conditions)
+      console.log('🔒 Verrouillage du créneau...')
+      const { data: updatedSlot, error: slotUpdateError } = await supabase
+        .from('time_slots')
+        .update({ is_available: false })
+        .eq('id', validatedData.time_slot_id)
+        .eq('is_available', true) // Condition pour éviter les conflits
+        .select()
+        .single()
+      
+      if (slotUpdateError || !updatedSlot) {
+        console.log('❌ Impossible de verrouiller le créneau - déjà réservé:', slotUpdateError)
+        return NextResponse.json(
+          { error: 'Créneau déjà réservé par un autre utilisateur' },
+          { status: 409 }
+        )
+      }
+      
+      console.log('✅ Créneau verrouillé avec succès')
+      
+      // Maintenant créer la réservation
       const { data: booking, error: bookingError } = await supabase
         .from('bookings')
         .insert(bookingData)
@@ -213,6 +235,13 @@ export async function POST(request: NextRequest) {
       
       if (bookingError) {
         console.log('❌ Erreur création réservation:', bookingError)
+        
+        // Restaurer la disponibilité du créneau en cas d'erreur
+        console.log('🔄 Restauration du créneau...')
+        await supabase
+          .from('time_slots')
+          .update({ is_available: true })
+          .eq('id', validatedData.time_slot_id)
         
         // Vérifier si c'est un conflit de créneau
         if (bookingError.message.includes('duplicate') || bookingError.message.includes('unique')) {
@@ -229,17 +258,6 @@ export async function POST(request: NextRequest) {
       }
       
       console.log('✅ Réservation créée avec succès:', booking.id)
-      
-      // Marquer le créneau comme non disponible
-      const { error: slotUpdateError } = await supabase
-        .from('time_slots')
-        .update({ is_available: false })
-        .eq('id', validatedData.time_slot_id)
-      
-      if (slotUpdateError) {
-        console.log('⚠️ Erreur mise à jour créneau:', slotUpdateError)
-        // Note: on continue malgré l'erreur car la réservation est créée
-      }
       
       // Créer entrée dans l'historique
       const { error: historyError } = await supabase

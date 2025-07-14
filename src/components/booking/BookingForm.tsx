@@ -15,12 +15,13 @@ interface BookingFormProps {
   venue: Venue
   slot: TimeSlot
   onSuccess?: (bookingId: string) => void
+  onConflict?: () => void
 }
 
-export default function BookingForm({ venue, slot, onSuccess }: BookingFormProps) {
+export default function BookingForm({ venue, slot, onSuccess, onConflict }: BookingFormProps) {
   const { user, authType } = useAuth()
   const { createBooking } = useBookings()
-  const { initiatePayment, loading: paymentLoading } = usePayments()
+  const { initiatePayment, loading: paymentLoading, paymentMode, isPaymentEnabled } = usePayments()
 
   const [phone, setPhone] = useState<string>('')
 
@@ -65,28 +66,64 @@ export default function BookingForm({ venue, slot, onSuccess }: BookingFormProps
       
       console.log('✅ Réservation créée côté client:', booking)
 
-      // Initier le paiement Wave CI
-      const paymentResponse = await initiatePayment({
-        booking_id: booking.id,
-        provider: 'wave',
-        amount: booking.total_amount,
-        phone_number: phone,
-      })
+      // PAYMENT_DISABLED_MODE: Initier le paiement (Wave CI ou mock)
+      if (isPaymentEnabled) {
+        // Mode normal avec vraie API Wave CI
+        const paymentResponse = await initiatePayment({
+          booking_id: booking.id,
+          provider: 'wave',
+          amount: booking.total_amount,
+          phone_number: phone,
+        })
 
-      if (paymentResponse?.payment_url) {
-        window.location.href = paymentResponse.payment_url
+        if (paymentResponse?.checkout_url) {
+          window.location.href = paymentResponse.checkout_url
+        } else {
+          onSuccess?.(booking.id)
+        }
       } else {
-        onSuccess?.(booking.id)
+        // Mode mock - Simuler le paiement
+        console.log('🧪 Mode test activé - Simulation paiement...')
+        
+        const mockPaymentResponse = await initiatePayment({
+          booking_id: booking.id,
+          provider: 'wave',
+          amount: booking.total_amount,
+          phone_number: phone,
+        })
+        
+        if (mockPaymentResponse?.mock) {
+          // Simuler une confirmation automatique après délai
+          console.log('✅ Paiement simulé terminé - Redirection vers succès')
+          onSuccess?.(booking.id)
+        }
       }
     } catch (err) {
       console.error('❌ Erreur lors de la réservation:', err)
-      setError((err as Error).message)
+      const errorMessage = (err as Error).message
+      setError(errorMessage)
+      
+      // Handle booking conflict (409 error)
+      if (errorMessage.includes('Créneau déjà réservé') || 
+          errorMessage.includes('déjà réservé') || 
+          errorMessage.includes('autre utilisateur') ||
+          errorMessage.includes('Créneau non disponible')) {
+        console.log('🔄 Conflit détecté - Rafraîchissement des créneaux...')
+        onConflict?.()
+      }
     }
     setSubmitting(false)
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* PAYMENT_DISABLED_MODE: Banner mode test */}
+      {!isPaymentEnabled && (
+        <div className="bg-orange-50 border border-orange-200 text-orange-800 px-4 py-3 rounded-md text-sm">
+          <span className="font-medium">🧪 Mode Test</span> - Les paiements sont simulés
+        </div>
+      )}
+      
       <div className="border p-4 rounded-md bg-gray-50 border-l-4 border-ci-green">
         <h3 className="font-semibold text-ci-green mb-2">Récapitulatif</h3>
         <p><strong>Terrain :</strong> {venue.name}</p>
@@ -122,7 +159,10 @@ export default function BookingForm({ venue, slot, onSuccess }: BookingFormProps
 
       <Button type="submit" disabled={submitting || paymentLoading} variant="green" className="w-full flex items-center justify-center gap-2">
         {submitting || paymentLoading && <LoadingSpinner />}
-        {submitting || paymentLoading ? 'Réservation…' : 'Réserver et payer avec Wave'}
+        {submitting || paymentLoading ? 
+          (paymentMode === 'mock' ? 'Simulation en cours…' : 'Réservation…') : 
+          (isPaymentEnabled ? 'Réserver et payer avec Wave' : 'Réserver (Mode Test)')
+        }
       </Button>
     </form>
   )

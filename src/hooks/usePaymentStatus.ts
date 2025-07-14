@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
 import { Payment } from '@/types/database'
 
 export function usePaymentStatus(bookingId?: string, intervalMs = 5000) {
@@ -14,18 +13,24 @@ export function usePaymentStatus(bookingId?: string, intervalMs = 5000) {
 
     const fetchStatus = async () => {
       try {
-        const { data, error } = await supabase
-          .from('payments')
-          .select('*')
-          .eq('booking_id', bookingId)
-          .single()
+        console.log('🔍 Récupération statut paiement via API pour booking:', bookingId)
+        
+        const response = await fetch(`/api/payments/status?booking_id=${bookingId}`)
+        const data = await response.json()
 
-        if (error) {
-          setError(error.message)
+        if (!response.ok) {
+          throw new Error(data.error || 'Erreur récupération paiement')
+        }
+
+        if (data.success) {
+          setPayment(data.payment)
+          setError(null)
+          console.log('✅ Statut paiement récupéré:', data.payment?.status || 'aucun paiement')
         } else {
-          setPayment(data as Payment)
+          throw new Error(data.error || 'Erreur inconnue')
         }
       } catch (err) {
+        console.error('❌ Erreur usePaymentStatus:', err)
         setError((err as Error).message)
       } finally {
         setLoading(false)
