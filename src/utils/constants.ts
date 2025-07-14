@@ -34,8 +34,9 @@ export const AUTH_TYPES = {
   guest: 'Invité',
 } as const
 
-// Formats téléphone Côte d'Ivoire
-export const PHONE_REGEX = /^(\+225|225|0)?[0-9]{8,10}$/
+// Formats téléphone Côte d'Ivoire - Exactement 10 chiffres
+export const PHONE_REGEX = /^(\+225|225|0)?[0-9]{10}$/
+export const PHONE_REGEX_STRICT = /^[0-9]{10}$/
 export const PHONE_PREFIXES = ['01', '02', '03', '05', '07', '08', '09']
 
 // Horaires d'ouverture par défaut

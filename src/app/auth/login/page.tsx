@@ -1,79 +1,63 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
-import { validateEmail } from '@/utils/validation'
-import { PHONE_REGEX } from '@/utils/constants'
-import { LoadingSpinner } from '@/components/common/LoadingStates'
+import LoginForm, { type LoginData } from '@/components/auth/LoginForm'
+import RegisterForm, { type RegisterData } from '@/components/auth/RegisterForm'
 
 type AuthMode = 'login' | 'register'
 
-export default function AuthPage() {
+function AuthPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get('redirect') || '/'
   
-  const { login, register, loading } = useAuth()
+  const { registerComplete, loginDual, loading, user, authType } = useAuth()
   const [mode, setMode] = useState<AuthMode>('login')
-  const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+
+  const handleLogin = async (data: LoginData) => {
     setError(null)
-
-    // Validations
-    if (!email && !phone) {
-      setError('Email ou téléphone requis')
-      return
-    }
-
-    if (email && !validateEmail(email)) {
-      setError('Format email invalide')
-      return
-    }
-
-    if (phone && !PHONE_REGEX.test(phone)) {
-      setError('Format téléphone invalide')
-      return
-    }
-
-    if (password.length < 8) {
-      setError('Mot de passe trop court (minimum 8 caractères)')
-      return
-    }
-
-    if (mode === 'register' && password !== confirmPassword) {
-      setError('Les mots de passe ne correspondent pas')
-      return
-    }
-
     try {
-      if (mode === 'login') {
-        console.log('🔐 Tentative de connexion...')
-        await login({ email: email || undefined, phone: phone || undefined, password })
-        console.log('✅ Connexion réussie, redirection vers:', redirectTo)
-      } else {
-        console.log('📝 Tentative d\'inscription...')
-        const result = await register({ email: email || undefined, phone: phone || undefined, password })
-        console.log('✅ Inscription réussie:', result)
-        
-        // Pour l'inscription, afficher un message de confirmation
-        if (result && !result.session) {
-          setError('Inscription réussie ! Vérifiez votre email pour confirmer votre compte.')
-          return
-        }
+      console.log('🔐 Début connexion...')
+      
+      const result = await loginDual(data)
+      console.log('🎯 Résultat loginDual:', result)
+      
+      if (result.authType === 'account') {
+        console.log('🚀 Connexion réussie, redirection avec refresh...')
+        // ✅ SOLUTION SIMPLE ET FIABLE : window.location.href
+        window.location.href = redirectTo
+      } else if (result.authType === 'guest') {
+        console.log('👤 Connexion invité, navigation directe')
+        router.push(redirectTo)
       }
-      router.push(redirectTo)
     } catch (err) {
-      console.error('❌ Erreur auth:', err)
+      console.error('❌ Erreur connexion:', err)
+      setError((err as Error).message)
+    }
+  }
+
+  const handleRegister = async (data: RegisterData) => {
+    setError(null)
+    try {
+      const result = await registerComplete(data)
+      
+      // Pour l'inscription, afficher un message de confirmation
+      if (result && !result.session) {
+        setError('Inscription réussie ! Vérifiez votre email pour confirmer votre compte.')
+        return
+      }
+      
+      // Si une session est créée (connexion immédiate), rediriger
+      if (result && result.session) {
+        window.location.href = redirectTo
+      }
+    } catch (err) {
       setError((err as Error).message)
     }
   }
@@ -90,7 +74,10 @@ export default function AuthPage() {
         <div className="flex rounded-lg bg-gray-100 p-1">
           <button
             type="button"
-            onClick={() => setMode('login')}
+            onClick={() => {
+              setMode('login')
+              setError(null)
+            }}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
               mode === 'login'
                 ? 'bg-white text-ci-green shadow-sm'
@@ -101,7 +88,10 @@ export default function AuthPage() {
           </button>
           <button
             type="button"
-            onClick={() => setMode('register')}
+            onClick={() => {
+              setMode('register')
+              setError(null)
+            }}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
               mode === 'register'
                 ? 'bg-white text-ci-green shadow-sm'
@@ -112,72 +102,20 @@ export default function AuthPage() {
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="exemple@email.com"
-            />
-          </div>
-
-          <div className="text-center text-sm text-gray-500">ou</div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Téléphone</label>
-            <Input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+225 XX XX XX XX"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Mot de passe</label>
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Minimum 8 caractères"
-            />
-          </div>
-
-          {mode === 'register' && (
-            <div>
-              <label className="block text-sm font-medium mb-1">Confirmer mot de passe</label>
-              <Input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Répétez votre mot de passe"
-              />
-            </div>
-          )}
-
-          {error && (
-            <div className={`text-sm text-center p-2 rounded ${
-              error.includes('réussie') 
-                ? 'text-green-600 bg-green-50' 
-                : 'text-red-600 bg-red-50'
-            }`}>
-              {error}
-            </div>
-          )}
-
-          <Button
-            type="submit"
-            disabled={loading}
-            variant="green"
-            className="w-full flex items-center justify-center gap-2"
-          >
-            {loading && <LoadingSpinner />}
-            {loading ? 'En cours...' : mode === 'login' ? 'Se connecter' : 'S\'inscrire'}
-          </Button>
-        </form>
+        {/* Forms */}
+        {mode === 'login' ? (
+          <LoginForm
+            onSubmit={handleLogin}
+            loading={loading}
+            error={error}
+          />
+        ) : (
+          <RegisterForm
+            onSubmit={handleRegister}
+            loading={loading}
+            error={error}
+          />
+        )}
 
         {/* Continue as guest */}
         <div className="text-center">
@@ -199,15 +137,19 @@ export default function AuthPage() {
             Continuer comme invité
           </Button>
         </div>
-
-        {/* Legal */}
-        {mode === 'register' && (
-          <p className="text-xs text-gray-500 text-center">
-            En vous inscrivant, vous acceptez nos conditions d'utilisation
-            et notre politique de confidentialité.
-          </p>
-        )}
       </Card>
     </div>
+  )
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-ci-green/10 to-ci-orange/10 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md p-8 text-center">
+        <div className="animate-pulse">Chargement...</div>
+      </Card>
+    </div>}>
+      <AuthPageContent />
+    </Suspense>
   )
 }
