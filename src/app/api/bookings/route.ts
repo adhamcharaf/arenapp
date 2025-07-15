@@ -74,24 +74,103 @@ export async function POST(request: NextRequest) {
     const normalizedPhone = validatePhone(validatedData.phone_number)
     console.log('📞 Téléphone normalisé:', normalizedPhone)
     
-    // Vérifier la disponibilité du créneau
-    console.log('🔍 Vérification disponibilité créneau:', validatedData.time_slot_id)
-    const { data: timeSlot, error: slotError } = await supabase
-      .from('time_slots')
-      .select('*, venue:venues(*)')
-      .eq('id', validatedData.time_slot_id)
-      .eq('is_available', true)
-      .single()
+    // APPROCHE ATOMIQUE: Vérifier et verrouiller en une seule opération avec retry
+    console.log('🔒 Verrouillage atomique du créneau:', validatedData.time_slot_id)
     
-    console.log('📅 Créneau trouvé:', timeSlot ? 'OUI' : 'NON')
-    if (slotError) console.log('❌ Erreur créneau:', slotError)
+    let lockedSlot = null
+    let lockError = null
+    const maxRetries = 3
+    const retryDelay = 100 // ms
     
-    if (slotError || !timeSlot) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      console.log(`🔄 Tentative de verrouillage ${attempt}/${maxRetries}`)
+      
+      const result = await supabase
+        .from('time_slots')
+        .update({ is_available: false })
+        .eq('id', validatedData.time_slot_id)
+        .eq('venue_id', validatedData.venue_id)  // Validation cohérence intégrée
+        .eq('is_available', true)  // Condition de disponibilité
+        .select('*, venue:venues(*)')
+        .single()
+      
+      lockedSlot = result.data
+      lockError = result.error
+      
+      if (lockedSlot) {
+        console.log(`✅ Verrouillage réussi à la tentative ${attempt}`)
+        break
+      }
+      
+      if (attempt < maxRetries) {
+        console.log(`⏳ Tentative ${attempt} échouée, retry dans ${retryDelay}ms...`)
+        await new Promise(resolve => setTimeout(resolve, retryDelay))
+      }
+    }
+    
+    console.log('📅 Verrouillage résultat:', lockedSlot ? 'SUCCÈS' : 'ÉCHEC')
+    if (lockError) {
+      console.log('❌ Erreur verrouillage:', lockError)
+      console.log('📊 Détails erreur:', JSON.stringify(lockError, null, 2))
+    }
+    
+    if (lockError || !lockedSlot) {
+      // Diagnostiquer pourquoi le verrouillage a échoué
+      console.log('🔍 Diagnostic: Vérification de l\'état du créneau...')
+      
+      const { data: currentSlot, error: checkError } = await supabase
+        .from('time_slots')
+        .select('*, venue:venues(*)')
+        .eq('id', validatedData.time_slot_id)
+        .single()
+      
+      if (checkError) {
+        console.log('❌ Créneau inexistant:', checkError)
+        return NextResponse.json(
+          { error: 'Créneau introuvable' },
+          { status: 404 }
+        )
+      }
+      
+      console.log('📊 État actuel du créneau:', JSON.stringify(currentSlot, null, 2))
+      
+      // Vérifier la cohérence venue/slot
+      if (currentSlot.venue_id !== validatedData.venue_id) {
+        console.log('❌ ERREUR COHÉRENCE - Créneau n\'appartient pas au terrain')
+        return NextResponse.json(
+          { 
+            error: 'Incohérence: le créneau sélectionné n\'appartient pas au terrain choisi',
+            details: {
+              requested_venue: validatedData.venue_id,
+              slot_venue: currentSlot.venue_id,
+              slot_venue_name: currentSlot.venue?.name
+            }
+          },
+          { status: 400 }
+        )
+      }
+      
+      // Vérifier la disponibilité
+      if (!currentSlot.is_available) {
+        console.log('❌ Créneau déjà réservé')
+        return NextResponse.json(
+          { error: 'Créneau déjà réservé par un autre utilisateur' },
+          { status: 409 }
+        )
+      }
+      
+      // Erreur inexpliquée
+      console.log('❌ Erreur de verrouillage inexpliquée')
       return NextResponse.json(
-        { error: 'Créneau non disponible' },
-        { status: 400 }
+        { error: 'Erreur système lors du verrouillage du créneau' },
+        { status: 500 }
       )
     }
+    
+    console.log('✅ Créneau verrouillé avec succès:', lockedSlot.id)
+    
+    // Utiliser les données du créneau verrouillé
+    const timeSlot = lockedSlot
     
     // Vérifier qu'il n'y a pas déjà une réservation pour ce créneau
     const { data: existingBooking } = await supabase
@@ -198,30 +277,8 @@ export async function POST(request: NextRequest) {
     }
     console.log('📋 Données réservation:', JSON.stringify(bookingData, null, 2))
     
-    // Utiliser transaction pour assurer la cohérence atomique
+    // Créer la réservation (le créneau est déjà verrouillé)
     try {
-      // Marquer le créneau comme non disponible AVANT de créer la réservation
-      // Cela prévient les conditions de course (race conditions)
-      console.log('🔒 Verrouillage du créneau...')
-      const { data: updatedSlot, error: slotUpdateError } = await supabase
-        .from('time_slots')
-        .update({ is_available: false })
-        .eq('id', validatedData.time_slot_id)
-        .eq('is_available', true) // Condition pour éviter les conflits
-        .select()
-        .single()
-      
-      if (slotUpdateError || !updatedSlot) {
-        console.log('❌ Impossible de verrouiller le créneau - déjà réservé:', slotUpdateError)
-        return NextResponse.json(
-          { error: 'Créneau déjà réservé par un autre utilisateur' },
-          { status: 409 }
-        )
-      }
-      
-      console.log('✅ Créneau verrouillé avec succès')
-      
-      // Maintenant créer la réservation
       const { data: booking, error: bookingError } = await supabase
         .from('bookings')
         .insert(bookingData)

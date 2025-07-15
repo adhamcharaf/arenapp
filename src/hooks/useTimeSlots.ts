@@ -11,6 +11,8 @@ export function useTimeSlots(venueId?: string, date?: string, enablePolling = fa
     if (!venueId || !date) return
 
     setLoading(true)
+    console.log('🔍 useTimeSlots - Récupération créneaux:', { venueId, date })
+    
     const { data, error } = await supabase
       .from('time_slots')
       .select('*')
@@ -20,8 +22,18 @@ export function useTimeSlots(venueId?: string, date?: string, enablePolling = fa
       .order('start_time', { ascending: true })
 
     if (error) {
+      console.error('❌ useTimeSlots - Erreur:', error)
       setError(error.message)
     } else {
+      console.log('✅ useTimeSlots - Créneaux récupérés:', {
+        count: data?.length || 0,
+        slots: data?.map(slot => ({
+          id: slot.id,
+          venue_id: slot.venue_id,
+          start_time: slot.start_time,
+          is_available: slot.is_available
+        })) || []
+      })
       setSlots(data as TimeSlot[])
     }
     setLoading(false)

@@ -82,6 +82,16 @@ export default function TimeSlotPicker({ venueId, onSelect, shouldRefresh, onRef
           const isUnavailable = !slot.is_available || isPast
           const isBookingInProgress = bookingSlotId === slot.id
 
+          // Validation de cohérence venue/slot
+          if (slot.venue_id !== venueId) {
+            console.error('❌ ERREUR COHÉRENCE TimeSlotPicker - Créneau incohérent:', {
+              slot_id: slot.id,
+              slot_venue_id: slot.venue_id,
+              expected_venue_id: venueId,
+              slot_time: `${start}-${end}`
+            })
+            return null // Ne pas afficher les créneaux incohérents
+          }
 
           return (
             <div
@@ -89,6 +99,19 @@ export default function TimeSlotPicker({ venueId, onSelect, shouldRefresh, onRef
               className={getSlotClasses(slot)}
               onClick={() => {
                 if (isUnavailable || isBookingInProgress) return
+                
+                // Double validation avant sélection
+                if (slot.venue_id !== venueId) {
+                  console.error('❌ Tentative de sélection d\'un créneau incohérent')
+                  return
+                }
+                
+                console.log('✅ Sélection créneau:', {
+                  slot_id: slot.id,
+                  venue_id: slot.venue_id,
+                  time: `${start}-${end}`
+                })
+                
                 setBookingSlotId(slot.id)
                 onSelect(slot)
               }}

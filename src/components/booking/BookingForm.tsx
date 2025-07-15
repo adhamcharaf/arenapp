@@ -39,6 +39,12 @@ export default function BookingForm({ venue, slot, onSuccess, onConflict }: Book
     e.preventDefault()
     setError(null)
 
+    // Prévenir les double-submit
+    if (submitting) {
+      console.log('🚫 Double-submit détecté - ignoré')
+      return
+    }
+
     // Validation du téléphone (10 chiffres exactement)
     const phoneDigits = phone.replace('+225', '')
     if (!validatePhone10Digits(phoneDigits)) {
@@ -101,16 +107,32 @@ export default function BookingForm({ venue, slot, onSuccess, onConflict }: Book
     } catch (err) {
       console.error('❌ Erreur lors de la réservation:', err)
       const errorMessage = (err as Error).message
-      setError(errorMessage)
       
-      // Handle booking conflict (409 error)
+      // Améliorer les messages d'erreur pour l'utilisateur
+      let userFriendlyMessage = errorMessage
+      
       if (errorMessage.includes('Créneau déjà réservé') || 
           errorMessage.includes('déjà réservé') || 
-          errorMessage.includes('autre utilisateur') ||
-          errorMessage.includes('Créneau non disponible')) {
+          errorMessage.includes('autre utilisateur')) {
+        userFriendlyMessage = 'Ce créneau vient d\'être réservé par un autre utilisateur. Veuillez choisir un autre créneau.'
         console.log('🔄 Conflit détecté - Rafraîchissement des créneaux...')
         onConflict?.()
+      } else if (errorMessage.includes('Créneau non disponible')) {
+        userFriendlyMessage = 'Ce créneau n\'est plus disponible. Veuillez en sélectionner un autre.'
+        onConflict?.()
+      } else if (errorMessage.includes('Incohérence')) {
+        userFriendlyMessage = 'Erreur de sélection. Veuillez recharger la page et réessayer.'
+      } else if (errorMessage.includes('téléphone')) {
+        userFriendlyMessage = 'Numéro de téléphone invalide. Veuillez vérifier le format.'
+      } else if (errorMessage.includes('réseau') || errorMessage.includes('network')) {
+        userFriendlyMessage = 'Erreur de connexion. Veuillez vérifier votre connexion internet et réessayer.'
+      } else if (errorMessage.includes('timeout')) {
+        userFriendlyMessage = 'La requête a pris trop de temps. Veuillez réessayer.'
+      } else {
+        userFriendlyMessage = 'Une erreur est survenue. Veuillez réessayer dans quelques instants.'
       }
+      
+      setError(userFriendlyMessage)
     }
     setSubmitting(false)
   }

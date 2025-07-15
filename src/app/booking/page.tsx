@@ -101,7 +101,16 @@ function BookingClient() {
           </div>
           <TimeSlotPicker 
             venueId={selectedVenue.id} 
-            onSelect={setSelectedSlot} 
+            onSelect={(slot) => {
+              console.log('📅 BookingPage - Sélection créneau:', {
+                venue_id: selectedVenue.id,
+                venue_name: selectedVenue.name,
+                slot_id: slot.id,
+                slot_venue_id: slot.venue_id,
+                coherent: slot.venue_id === selectedVenue.id
+              })
+              setSelectedSlot(slot)
+            }} 
             shouldRefresh={shouldRefreshSlots}
             onRefreshComplete={handleRefreshComplete}
           />
